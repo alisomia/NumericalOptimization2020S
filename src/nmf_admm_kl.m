@@ -1,4 +1,4 @@
-function [W, H, info] = nmf_admm(V, r, opt)
+function [W, H, info] = nmf_admm_kl(V, r, opt)
 %   D.L. Sun and C. F?votte, "Alternating direction method of multipliers
 %    for non-negative matrix factorization with the beta divergence",
 %      ICASSP 2014.
