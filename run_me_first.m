@@ -4,6 +4,7 @@ clear;
 
 % set configuration
 addpath('./database');
+addpath('./src/utils');
 addpath('./src');
 
 % load data
