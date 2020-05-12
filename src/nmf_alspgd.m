@@ -31,32 +31,32 @@ W = rand(m,r); H = rand(r,n);
 epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;
-        tol_grad_ratio = 0.00001; % tol = [0.001; 0.0001; 0.00001];
-        gradW = W*(H*H') - V*H'; 
-        gradH = (W'*W)*H - W'*V;   
-        init_grad = norm([gradW; gradH'],'fro');
-        tolW = max(0.001,tol_grad_ratio)*init_grad; 
-        tolH = tolW;
-        
+tol_grad_ratio = 0.00001; % tol = [0.001; 0.0001; 0.00001];
+gradW = W*(H*H') - V*H';
+gradH = (W'*W)*H - W'*V;
+init_grad = norm([gradW; gradH'],'fro');
+tolW = max(0.001,tol_grad_ratio)*init_grad;
+tolH = tolW;
+
 for epoch = 1:maxiter
- projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
-            if projnorm < tol_grad_ratio*init_grad
-                break;
-            end
-  
-            [W, gradW, iterW] = nlssubprob(V', H', W', tolW, 1000); 
-            W = W'; 
-            gradW = gradW';
-
-            if iterW == 1
-                tolW = 0.1 * tolW;
-            end
-
-            [H, gradH, iterH] = nlssubprob(V, W, H, tolH, 1000);
-            if iterH == 1
-                tolH = 0.1 * tolH; 
-            end     
-            loss(epoch) = metric_euc(V,W,H);
+    projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
+    if projnorm < tol_grad_ratio*init_grad
+        break;
+    end
+    
+    [W, gradW, iterW] = nlssubprob(V', H', W', tolW, 1000);
+    W = W';
+    gradW = gradW';
+    
+    if iterW == 1
+        tolW = 0.1 * tolW;
+    end
+    
+    [H, gradH, iterH] = nlssubprob(V, W, H, tolH, 1000);
+    if iterH == 1
+        tolH = 0.1 * tolH;
+    end
+    loss(epoch) = metric_euc(V,W,H);
 end
 info.name = 'ALSPGD';
 info.time = cputime - t0;

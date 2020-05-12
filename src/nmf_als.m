@@ -29,12 +29,12 @@ epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;
 for epoch = 1:maxiter
-            H = (W'*W) \ W' * V;        % H = inv(W'*W) * W' * V;
-            H = H .* (H>0);
-            W = V * H' / (H*H');        % W = V * H' * inv(H*H');
-            W = (W>0) .* W;
-            W = W ./ (repmat(sum(W), m, 1)+eps); 
-            loss(epoch) = metric_euc(V,W,H);
+    H = (W'*W) \ W' * V;        % H = inv(W'*W) * W' * V;
+    H = H .* (H>0);
+    W = V * H' / (H*H');        % W = V * H' * inv(H*H');
+    W = (W>0) .* W;
+    W = W ./ (repmat(sum(W), m, 1)+eps);
+    loss(epoch) = metric_euc(V,W,H);
 end
 info.name = 'ALS';
 info.time = cputime - t0;
