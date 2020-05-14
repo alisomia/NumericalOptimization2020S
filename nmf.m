@@ -6,5 +6,5 @@ opt.eps = 1e-8;
 opt.maxiter = 1000;
 opt.rho=1;
 opt.print = 1;
-[W,H,info] = nmf_anls_blockpivot(V,r,opt);
+[W,H,info] = nmf_ao_admm_kl(V,r,opt);
 
