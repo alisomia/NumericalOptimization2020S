@@ -27,7 +27,12 @@ if ~isfield(opt,'alpha'); alpha = 1; else; alpha = opt.alpha; end
 %if ~isfield(opt,'delta'); delta = 0.1; else; delta = opt.delta; end
 if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
 if ~isfield(opt,'tol_grad_ratio'); tol_grad_ratio = 1e-4; else; tol_grad_ratio = opt.tol_grad_ratio; end
-W = rand(m,r); H = rand(r,n);
+if isfield(opt,'init')
+    W = opt.init.W;
+    H = opt.init.H;
+else
+    W = rand(m,r); H = rand(r,n);
+end
 epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;

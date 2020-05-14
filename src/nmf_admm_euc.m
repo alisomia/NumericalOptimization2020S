@@ -9,12 +9,18 @@ function [U, V, info] = nmf_admm_euc(X, r, opt)
 
 [m,n] = size(X);
 if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
+if ~isfield(opt, 'tol'); tol = 1e-5; else; tol = opt.tol; end
 %if ~isfield(opt,'metric');metric = "KL"; else; metric = opt.metric; end
 if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
 if ~isfield(opt, 'rho'); rho = 5; else; rho = opt.rho; end
 
 % random initialization
-U = rand(m,r); V = rand(r,n);
+if isfield(opt,'init')
+    U = opt.init.W;
+    V = opt.init.H;
+else
+    U = rand(m,r); V = rand(r,n);
+end
 epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;
@@ -33,6 +39,9 @@ for epoch = 1:maxiter
   Lambda = Lambda + rho*(U-S);
   Pi = Pi + rho*(V-T);
   loss(epoch) = metric_euc(X,U,V);
+      if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
+        break;
+    end
 end
 
 info.name = 'ADMM';

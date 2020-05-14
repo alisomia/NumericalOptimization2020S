@@ -1,6 +1,6 @@
 function [W,H,info] = nmf_anls_asgivens(V,r, opt)
 % Alternative Projected Barzilai Borwein method (APBB) for non-negative matrix factorization (NMF).
-%   
+%
 %
 % INPUT
 % --------------------------------------------------------
@@ -21,7 +21,12 @@ function [W,H,info] = nmf_anls_asgivens(V,r, opt)
 % Author: Ting Lin @ PKU
 
 [m,n] = size(V);
-W = rand(m,r); H = rand(r,n);
+if isfield(opt,'init')
+    W = opt.init.W;
+    H = opt.init.H;
+else
+    W = rand(m,r); H = rand(r,n);
+end
 epoch = 0;
 if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
 
@@ -29,24 +34,27 @@ loss = zeros(1, maxiter);
 t0   = cputime;
 
 for epoch = 1:maxiter
-   % disp(epoch);
-%     projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
-%     if projnorm < tol_grad_ratio*init_grad
-%         break;
-%     end
-            ow = 0;
-            WtV = W' * V;
-            for i=1:size(H,2)
-                H(:,i) = nnls1_asgivens(W'*W, WtV(:,i), ow, 1, H(:,i));
-            end
-
-            HAt = H*V';
-            Wt = W';
-            for i=1:size(W,1)
-                Wt(:,i) = nnls1_asgivens(H*H', HAt(:,i), ow, 1, Wt(:,i));
-            end
-            W = Wt';
+    % disp(epoch);
+    %     projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
+    %     if projnorm < tol_grad_ratio*init_grad
+    %         break;
+    %     end
+    ow = 0;
+    WtV = W' * V;
+    for i=1:size(H,2)
+        H(:,i) = nnls1_asgivens(W'*W, WtV(:,i), ow, 1, H(:,i));
+    end
+    
+    HAt = H*V';
+    Wt = W';
+    for i=1:size(W,1)
+        Wt(:,i) = nnls1_asgivens(H*H', HAt(:,i), ow, 1, Wt(:,i));
+    end
+    W = Wt';
     loss(epoch) = metric_euc(V,W,H);
+    if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
+        break;
+    end
 end
 info.name = 'ANLS active set givens';
 info.time = cputime - t0;

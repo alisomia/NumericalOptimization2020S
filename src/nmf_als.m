@@ -22,9 +22,15 @@ function [W,H,info] = nmf_als(V,r,opt)
 
 [m,n] = size(V);
 if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
+if ~isfield(opt,'tol'); tol = 1e-5; else; tol = opt.tol; end
 %if ~isfield(opt,'metric');metric = "KL"; else; metric = opt.metric; end
 if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
-W = rand(m,r); H = rand(r,n);
+if isfield(opt,'init')
+    W = opt.init.W;
+    H = opt.init.H;
+else
+    W = rand(m,r); H = rand(r,n);
+end
 epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;
@@ -35,6 +41,9 @@ for epoch = 1:maxiter
     W = (W>0) .* W;
     W = W ./ (repmat(sum(W), m, 1)+eps);
     loss(epoch) = metric_euc(V,W,H);
+    if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
+        break;
+    end
 end
 info.name = 'ALS';
 info.time = cputime - t0;

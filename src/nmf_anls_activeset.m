@@ -21,10 +21,15 @@ function [W,H,info] = nmf_anls_activeset(V,r, opt)
 % Author: Ting Lin @ PKU
 
 [m,n] = size(V);
-W = rand(m,r); H = rand(r,n);
+if isfield(opt,'init')
+    W = opt.init.W;
+    H = opt.init.H;
+else
+    W = rand(m,r); H = rand(r,n);
+end
 epoch = 0;
 if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
-
+if ~isfield(opt, 'tol'); tol = 1e-5; else tol = opt.tol; end
 loss = zeros(1, maxiter);
 t0   = cputime;
 
@@ -38,6 +43,9 @@ for epoch = 1:maxiter
             W = nnlsm_activeset(H*H', H*V', ow, 1, W');
             W = W';
     loss(epoch) = metric_euc(V,W,H);
+        if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
+        break;
+    end
 end
 info.name = 'ANLS active set';
 info.time = cputime - t0;
