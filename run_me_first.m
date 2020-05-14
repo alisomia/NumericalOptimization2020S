@@ -4,8 +4,7 @@ clear;
 
 % set configuration
 addpath('./database');
-addpath('./src/utils');
-addpath('./src');
+addpath(genpath('./src'));
 
 % load data
 load('./database/yale64.mat');
