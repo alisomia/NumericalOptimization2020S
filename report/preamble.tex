@@ -1,0 +1,63 @@
+\usepackage{amsmath, amsfonts, amsthm}
+
+\usepackage{graphicx, epstopdf}
+\usepackage{color}
+\usepackage{geometry, graphicx}
+\usepackage{algorithm, algorithmic}
+\usepackage{bm}
+\usepackage{multirow}
+\usepackage{ulem}
+\geometry{left = 5em, right = 5em}
+\usepackage{listings}
+\usepackage{xcolor}
+%% notation macro
+\newcommand{\F}{\mathcal F}
+\newcommand{\T}{\mathcal T}
+\newcommand{\I}{\mathcal I}
+\newcommand{\U}{\mathcal U}
+\newcommand{\R}{\mathbb R}
+\renewcommand{\P}{\mathcal P}
+\newcommand{\uP}{ \mathcal \uline P}
+\newcommand{\B}{\mathcal B}
+%\newcommand{\R}{\mathbb R^2}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\C}{\mathbb C}
+\newcommand{\laplacian}{\triangle}
+\newcommand{\grad}{\nabla}
+\renewcommand{\div}{\textrm{div~}}
+
+\newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\difff}[3]{\frac{\parial #1^2}{\partial #2 \partial #3}}
+\newcommand{\diFF}[2]{\frac{\partial #1^2}{\partial^2 #2}}
+\newcommand{\diam}{\text{ diam }}
+%% non-noation macro
+\newcommand{\IN}{\text{  in  }}
+\newcommand{\ON}{\text{  on  }}
+\newcommand{\st}{\text{s.t.  }}
+\newcommand{\tbc}{{\color{red}[TBC]}}
+\renewcommand{\Return}{\textbf{return~}}
+\newcommand{\Break}{\textbf{break~}}
+\newcommand{\Continue}{\textbf{continue~}}
+\renewcommand{\And}{\textbf{~and~}}
+\newcommand{\Or}{\textbf{~or~}}
+%% enviorment
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+
+\DeclareMathOperator{\argmin}{arg~min}
+
+
+\title{\textbf{\showtitle}}
+\author{\showauthor}
+\usepackage{indentfirst}
+\usepackage{fancyhdr}  
+\pagestyle{fancy}
+\lhead{\textbf {\showtopic} }
+\chead{\showchead} 
+\rhead{\textbf {\showabs} }
+\lfoot{} 
+\cfoot{\thepage}
+\rfoot{} 
+\renewcommand{\headrulewidth}{0.4pt} 
