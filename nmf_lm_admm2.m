@@ -1,7 +1,7 @@
 % use LM to solve the least square problem, 
 % the subproblem is solved by (projected) ADMM
 
-function [W,H,info] = nmf_lm_admm(V,r,opt)
+function [W,H,info] = nmf_lm_admm2(V,r,opt)
 
 if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
 if ~isfield(opt,'tol'); tol = 1e-2; else; tol = opt.tol; end

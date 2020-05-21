@@ -23,6 +23,10 @@ for i = 1:admm_iter
     W(W<eps) = eps;
     H(H<eps) = eps;
     
+    
+    tolW = norm(W-Waux,'fro')/norm(W,'fro');
+    tolH = norm(H - Haux,'fro')/norm(H,'fro');
+    if tolW<1e-5&&tolH<1e-5; break; end
     % update multiplier
     alphaW = alphaW + mu*rho*(W - Waux);
     alphaH = alphaH + mu*rho*(H - Haux);
