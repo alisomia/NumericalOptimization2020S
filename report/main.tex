@@ -6,7 +6,8 @@
 \def\showauthor{Ting Lin, 1700010644}
 \def\showchead{LIN}
 \input{preamble.tex}
-
+%\DeclareMathOperator{\st}{s.t.}
+\renewcommand{\grad}{\nabla}
 \begin{document}
 	\maketitle
 	\thispagestyle{fancy}
@@ -16,25 +17,385 @@
 
 % TODO: write an abstract. 
 
-
+In this lab, we surveyed several methods on non-negative matrix factorization (NMF). Most of introduced algorithms are concerning NMF under the Euclidean(Frobenius) metric, however, some of them can be naturally extended to KL divergence. We introduce methods based on Multiplicative Update, Alternative Least Square, Alternative Non-negative Least Square, Alternative Direction of Multiplier Methods. Moreover, a new algorithm based on Nonlinear Least Square while subproblem is solved by ADMM is proposed. In the sections, we will analyze the convergence and test their performance, and finally test them in the popular ORL and Yale database.
 \section{Problem Setting}
 % TODO: write the euc and kl setting
+Nonnegative matrix factorization(NMF) considers the following optimization problem,
+\begin{equation}
+\begin{aligned}
+\min& \|V-WH\|_F^2 \\
+\st& 0<W\in \R^{m\times r}, \\ &0<H \in \R^{r \times n}
+\end{aligned}
+\end{equation}
+or based on KL divergence alternatively,
+\begin{equation}
+\begin{aligned}
+\min& D(V||WH) \\
+\st& 0<W\in \R^{m\times r}, \\ &0<H \in \R^{r \times n}
+\end{aligned}
+\end{equation}
+Here $$D(A||B) = \sum_{i,j}A_{ij}\log\frac{A_{ij}}{B_{ij}} - A_{ij} + B_{ij},$$
+which might behaves singular when the entry of $A$ or $B$ is near zero. 
 
+We always assume that $V$ is nonnegative otherwise we can consider $\P(V)$. Here and throughout this paper we denote $\P(V)$ by the projection: $[\P(V)]_{ij} = \max (V_{ij},0)$.
 
+We recall some basic properties according to \cite{review}:
+\begin{enumerate}
+	\item NMF does not in general have a unique solution (up to scaling and permutation).
+	\item NMF is not identifiable, in the sense that the task is challenging even in the clear artificial low rank data.
+	\item Clearly, it is smooth but non-convex.
+	\item The gradient of $W$ is $\nabla W = W(HH')-VH'$, and $\nabla H = W'WH-W'V$
+\end{enumerate}
 \section{Methods based on MU}
 % todo : explian what is MU
+In this section we introduce MU method and its variants, like \cite{mu,muacc,mumod,mumod2}.
+\subsection{MU and its convergence analysis}
+The basic idea of MU is simple, we choose a suitable stepsize and do gradient descent. Concretely, consider the gradient descent:
+$$ H_{ij} = H_{ij} + \eta_{ij}[\grad H]_{ij}$$
+Set $\eta_{ij} = H_{ij}/[W'WH]_{ij}$ we obtain the update rule of $H$, 
+$$ H_{ij} = H_{ij}\frac{[W'V]_{ij}}{[W'WH]_{ij}}$$
+Similar for $W$'s update, 
+$$W_{ij} = W_{ij}\frac{[V'H]_{ij}}{[WHH']_{ij}}$$
 
+Here we introduce a more compact notation, let $\otimes$ and  $\oslash$ be the element-wise multiplication and division operator, we can rewrite it as 
+$$H = H\otimes (W'V) \oslash (W'WH), \qquad W = W\otimes (V'H) \oslash (WHH')$$
+The implementation please see \textbf{nmf\_mu.m}.
+
+The implementation is a little complex in the KL version:
+$$H_{ij} = H_{ij}\frac{\sum_k W_{ki}V_{kj}/[WH]_{kj}}{\sum_k W_{ki}}$$
+$$H_{ij} = H_{ij}\frac{\sum_k H_{jk}V_{ik}/[WH]_{ik}}{\sum_k H_{jk}}$$
+also, see \textbf{nmf\_mu.m}
+
+The update factor is chosen such that the residual $\|V-WH\|$ ($D(V||WH)$ resp) is nonincreasing. The advantage of MU method is that no explicit projection operation is needed.
+
+\begin{proposition}
+	$\|V-WH\|$ ($D(V||WH)$ resp) is nonincreasing after each update.
+\end{proposition}
+
+We summarize it into the following algorithm \cite{mu}.
+\begin{algorithm}[H]
+	\caption{MU}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $$W_{ij} = W_{ij}\frac{[V'H]_{ij}}{[WHH']_{ij}}$$
+		\STATE $$ H_{ij} = H_{ij}\frac{[W'V]_{ij}}{[W'WH]_{ij}}$$
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+
+In practice, we set stop criterion as max iteration, and initialization step we use $W = rand(m,r);H=rand(r,n)$. 
+\subsection{Modified and Accelerated MU}
+However, the original MU method is not efficient, and faced various problem.  We introduce some techniques to alleviate them and make mu more powerful.
+\paragraph{Modified MU}
+In \cite{mumod}, two main difficulties of MU is declared:
+\begin{enumerate}
+	\item The denominator of the step size may be zero.
+	\item If the numerator if zero, and the gradient is negative, then $H_{ij}^k$ will not be changed. Hence the convergence analysis fails, and it often occurs in numerical results.
+\end{enumerate}
+Therefore, the authors proposed the modified step size to 
+$$\bar H\oslash(W'WH+\delta)$$
+where $$\bar H = H\otimes [\grad H \ge 0 ] + \max(H,\sigma) \otimes  [\grad H < 0 ].$$
+The detailed algorithm is shown below.
+
+\begin{algorithm}[H]
+	\caption{Modified MU}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $$\bar H = H\otimes [\grad H \ge 0 ] + \max(H,\sigma) \otimes  [\grad H < 0 ].$$
+		\STATE$$\bar W = W\otimes [\grad W \ge 0 ] + \max(W,\sigma) \otimes  [\grad W < 0 ].$$
+		\STATE $$ H= H - \bar H\oslash(W'W\bar H+\delta)\otimes \grad H$$
+		\STATE $$W = W - \bar W \oslash (\bar WHH' + \delta)\otimes \grad W$$
+		\STATE normalize $W$ and $H$, such that the column sum of $W$ is one.
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+In \cite{mumod}, several properties about this method is discussed.
+
+\begin{proposition}
+	If the initial value is nonnegative (strictly positive), then nonnegativity and strit positivity will be preserved after each update.
+\end{proposition}
+
+\begin{proposition}
+	The loss $\|V-WH\|$ is nonincreasing after each modified MU update. The sequence $W^k, H^k$ is pre-compact, and each of its accumulated point satisfies KKT condition.
+\end{proposition}
+
+\subsection{Accelerated MU}
+The acceleration techniques is introduced and analyzed in \cite{muacc, mumod2}. We mainly focus on the work in \cite{muacc}.
+
+For any given $\rho_W$ and $\rho_H$, we introduce the following algorithm:
+\begin{algorithm}[H]
+	\caption{Accelerated MU}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k, \delta$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $\varepsilon=1, \gamma = 1$
+		\WHILE{iter<$[1+rho_W\alpha]$ and $\gamma > \delta\varepsilon$}
+		\STATE $W^-=W$
+		\STATE $ W = W\otimes (V'H) \oslash (WHH')$
+		\IF{iter==1}
+		\STATE $\varepsilon = \|W-W^-\||_F$
+		\ENDIF
+		\STATE $\gamma = \|W-W^-\||_F$
+		\ENDWHILE
+		\STATE $\varepsilon=1, \gamma = 1$
+		\WHILE{iter<$[1+rho_H\alpha]$ and $\gamma > \delta\varepsilon$}
+		\STATE $H^-=H$
+		\STATE $H = H\otimes (W'V) \oslash (W'WH) $
+		\IF{iter==1}
+		\STATE $\varepsilon = \|H-H^-\||_F$
+		\ENDIF
+		\STATE $\gamma = \|H-H^-\||_F$
+		\ENDWHILE
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+Here $\rho_W = 1+\frac{mn+nr}{mr+m}$, $\rho_H = 1+\frac{mn+mr}{nr+n}$. $\delta$ is chosen to control the stop criterion and is chosen as 0.1 in our code (see \textbf{mnf\_muacc.m}).
+Notice that the method is just replace an alternative update to a new update strategy with condition, hence all the convergence analysis makes sense in the accelerated version. 
+\subsection{Experiments}
+%todo complete the experiment of MU
 \section{Methods based on ALS}
 
+The idea of Alternative (Nonnegative) Least Square is instead of solving the original problem, we optimize two linear problem alternatively.
+\begin{equation}
+\min_{W>0} \|V-WH^*\|
+\end{equation}
+\begin{equation}
+\min_{H>0} \|V-W^*H\|
+\end{equation}
+clearly, if we can solve the linear problem correctly, then the series $W^k, H^k$ must be non-increasing. Two ways was attempted in the literature. We will discuss the methods based on solving subproblem with or without constraints. In this section we introduce solve ALS plus a suitable projection step, and more general algorithms in constraint linear programming is explored in 
+\subsection{Naive ALS}
+In Naive ALS, we only need to compute the least square solution and project it into positive cone.
 
+\begin{algorithm}[H]
+	\caption{MU}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $H = (W'W)^{-1}(W'V)$
+		\STATE $H = \P(H)$
+		\STATE $W = VH'(HH')^{-1}$
+		\STATE $W = \P(W)$
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Projected BB method based ALS}
+We solve the subproblem by a projected BB, which is first introduced in \cite{apbb}. Which is slightly different from global BB method, since we have to project our result into positive cone after each line search.
+
+\begin{algorithm}[H]
+	\caption{PBBNLS}
+	\begin{algorithmic}[1]
+		\REQUIRE $A,B,X, \grad X,\rho$
+		\STATE Set $\gamma, M, \lambda_{max}, \lambda_{min}$
+		\STATE Set $Q(X) -(A'B,X) + 0.5 (X, A'AX)$
+		\STATE $\lambda = 1/\|\grad X\|_{\infty}$
+		\FOR{i = 1:iter}
+		\STATE $\alpha = 1$
+		\STATE $X^+ = X - \lambda \grad X$
+		\STATE $X^+ = \P(X^+)$
+		\STATE $Q^+ = Q(X^+)$
+		\WHILE{$\lambda > \lambda_{min}$ and $Q^+ < \max_{i-M<k<i}Q(X_i) + \gamma \alpha (\grad X, D)$}
+		\STATE $\alpha = \alpha / 4$
+		\STATE $X^+ = X - \alpha\lambda\grad X$
+		\STATE $X^+ = \P(X^+)$
+		\STATE $Q^+ = Q(X^+)$
+		\ENDWHILE
+		\STATE $s = X^+ - X$
+		\STATE $\grad X^+ = A'AX-A'B$
+		\STATE $y = \grad X^+ - \grad X$
+		\IF{$(s,y) < \varepsilon$}
+		\STATE $\lambda = \lambda_{\max}$
+		\ELSE
+		\STATE $\lambda = \min(\lambda_{\max}, \max(\lambda_{\min}, (s,s)/(s,y)))$
+		\ENDIF
+		\STATE $\grad X = \grad X^+,X_i = X  = X^+$
+		\ENDFOR
+		\STATE \Return $X, \grad X$
+	\end{algorithmic}
+\end{algorithm}
+
+The whole algorithm uses PBBNLS to update each steps.
+
+\begin{algorithm}[H]
+	\caption{APBB}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $[W,\grad W] = PBBNLS(H', V', W', \grad W')$
+		\STATE $W = W'$
+		\STATE $\grad W = \grad W'$
+		\STATE $[H,\grad H] = PBBNLS(W,V,H,\grad H)$
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+\subsection{Projected Gradient Descent based ALS}
+\cite{alspgd} proposed a projected gradient descent method to solve the subproblem. 
+%todo write the ALSPGD part.
+\subsection{Hierarchical ALS and its acceleration}
+Hierarchical  ALS \cite{hals} solves subproblem by LS with rank one modification. More precisely, we solve the linear problem column by column in $W$, and row by row in $H$ in one epoch's update. Here is  the algorithm, written in MATLAB format in order to make the idea of row/column by row/column more clear.
+
+\begin{algorithm}[H]
+	\caption{HALS}
+	\begin{algorithmic}[1]
+		\REQUIRE $V, k$
+		\STATE Initialize $W$ and $H$ 
+		\WHILE{not convergence}
+		\STATE $VtW = V'W, WtW = W'W$
+		\FOR{$k=1:r$}
+		\STATE $tmp = VtW(:,k)' - (WtW(:,k) * H) + WtW(k,k)*H(k,:)$
+		\STATE $H(k,:) = \P(tmp/WtW(k,k))$
+		\ENDFOR
+				\STATE $VHt = VH', HHt = HH'$
+		\FOR{$k=1:r$}
+		\STATE $tmp = (VHt(:,k) - (W * HHt(:,k)) + (W(:,k)* HHt(k,k)))$
+		\STATE $W(:,k) = \P(tmp/HHt(k,k))$
+		\ENDFOR
+		\ENDWHILE
+		\STATE \Return $W,H$.
+	\end{algorithmic}
+\end{algorithm}
+
+Also, an accelerated version is provided in \cite{muacc} and implemented in this lab, see \textbf{nmf\_halsacc.m}
+
+\subsection{Numerical Results}
+%todo fill the numerical result
 \section{Methods based on ANLS}
+%TODO  will delete this section if unnecessary
+
+\subsection{Block Pivoting}
+
+\subsection{Active Set}
+
+\subsection{Grouped Active Set}
 
 \section{Methods based on ADMM}
+In this section we introduce Alternative Direction of Multiplier Method, which is powerful in handling constraint problem and non-smooth problem.
+\subsection{a short introduction to ADMM framework}
+Suppose we aim to solve a function 
+$$min_X f(X)$$
+where $X$ is subjecting to some constraints. We introduce an auxiliary variable $Z$, and consider the following augmented Lagrangian
+$$L(X,Z,\alpha) = g(X,Z) + (\alpha, X-Z) + \frac{\rho}{2} \|X-Z\|^2.$$
+Here $g(X,Z)$ is a splitting of $f(X)$, i.e. $g(X,X) = X$.
 
-\section{A new method: LM-ADMM}
+The ADMM provide the following framework:
+\begin{algorithm}
+	\caption{General ADMM}
+	\begin{algorithmic}[1]
+	\REQUIRE $f, X$
+	\STATE Set $L$ be the augmented Lagrangian.
+	\STATE $Z = X$, $\alpha = 0$.
+	\WHILE{not converge}
+	\STATE $Z = \argmin L(X,Z,\alpha)$
+	\STATE $X = \argmin L(X,Z,\alpha)$
+	\STATE $\alpha = \alpha + \rho\mu(X-Z)$
+	\ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+Usually two $\argmin$ problem does not have the closed form solution, however, if there is a splitting such that both subproblem is easy to solve, then the algorithm might be very effective, at least in convex optimization. In practice, especially in nonconvex problem, such algorithm is also widely used while some rigorous convergence analysis is lacked.
 
 
+\subsection{Naive ADMM}
+We first apply ADMM naively, the algorithm is introduced in \cite{CITE} and we use the form shown in \cite{rk1admm}, yielding the following algorithm.
+
+The augmented Lagrangian function is denoted as 
+$$L(W,H,S,T,\Lambda, \Pi) = \frac{1}{2} \|X - WH\|_F^2 +  (\Lambda, W-S) + (\Pi, V-T) + \frac{\rho}{2}\|U-S\|_F^2 + \frac{\rho}{2} \|V-T\|_F^2$$
+
+\begin{algorithm}
+	\caption{Naive ADMM}
+	\begin{algorithmic}[1]
+		\REQUIRE $f, X$
+		\STATE Set $L$ be the augmented Lagrangian.
+		\STATE $Z = X$, $\alpha = 0$.
+		\WHILE{not converge}
+    \STATE $W = (VH'+\rho S-\Lambda)(HH'+\rho I)^{-1}$
+\STATE $H = (W'W+\rho I)^{-1}(W'V+\rho T-\Pi)$
+\STATE $S = \P(W + \Lambda/\rho)$
+\STATE $T = \P(H + \Pi/\rho)$
+\STATE $\Lambda = \Lambda + \rho(W-S)$
+\STATE $\Pi = \Pi + \rho(H-T)$
+		\ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{Alternating Optimizing ADMM}
+AO-ADMM is use ADMM to solve the subproblem in ALS, introduced in \cite{aoadmm}. We only introduce how to solve the subproblem by ADMM, in the following algorithm.
+%todo explain the ADMM of subproblem
+\begin{algorithm}[H]
+	\caption{ADMM-LS-UPDATE}
+	\begin{algorithmic}[1]
+		\REQUIRE $Y,W,H,r$
+		\STATE $G = W'W$
+		\STATE $Haux = H$, $\alpha = 0$
+		\STATE $\rho = tr(G)/k$
+		\FOR{$i = 1:iter$}
+		\STATE{$Haux = (G+\rho I)^{-1}(W'Y + \rho(H + \alpha))$}
+		\STATE $H= Haux - \alpha$
+		\STATE $\alpha = \alpha + H - Haux$
+		\ENDFOR
+	\end{algorithmic}
+\end{algorithm}
+
+\section{A new method: LMF-ADMM}
+In this section we propose a new method based on LMF method of Nonlinear Least Square, and use ADMM to solve the subproblem.
+
+We first recall LMF method, regarding NMF into a nonlinear least square problem: 
+Suppose we have $x_k$ and $J_k = \grad r(x_k)$. Here $r(x) : \R^m \to \R^n$ is the residual function and our goal is to minimize $r'r$
+
+Then we solve the following question to obtain the next point:
+$$\min \|J_k(x-x_k) - r_k\|_F^2 + \nu \|x-x_k\|_F^2$$
+Without constraint, the minimizer has a closed form:
+$$ x_k + (J_k'J_k + \nu I)^{-1}(J_k'r_k)$$
+That is equivalent to LMF method. Inspired by this, we proposed an ANLS approach of LMF method.
+
+\begin{algorithm}
+	\caption{LMF}
+	\begin{algorithmic}[1]
+		\STATE $R = V - WH$
+		\FOR{$i=1:iter$}
+		\STATE $[W^+, H^+] = admm_update(W,H)$
+		\STATE $R^+ = V - W^+H^+$
+		\STATE $dW = W^+ - W, dH = H^+-H$
+		%\STATE $\Delta g = \frac 12[(dW, \nu dW - \grad W) + (dH, \nu dH - \grad H)]$
+		%\IF{$\Delta g<0$}
+		%\STATE{$\nu = 4\nu$}
+		%\ENDIF
+		\STATE $\Delta f = \|R\|_F^2 - \|R^+\|_F^2$
+		\IF{$\Delta f > 0$}
+		\STATE $W = W^+, H = H^+, R = R^+, \mu = \mu/2$
+		\STATE $\grad W = WHH'-VH', \grad H = W'WH-W'V$
+		\ELSE
+		\STATE $\mu = 2\mu$
+		\ENDIF
+		\ENDFOR
+	\end{algorithmic}
+\end{algorithm}
 \section{Overall Numerical Experiment}
+
+\begin{thebibliography}{99}  
+	\bibitem{review}Gillis N. Nonnegative matrix factorization: Complexity, algorithms and applications[J]. Unpublished doctoral dissertation, Université catholique de Louvain. Louvain-La-Neuve: CORE, 2011.
+	\bibitem{mu}Lee D D, Seung H S. Algorithms for non-negative matrix factorization[C]//Advances in neural information processing systems. 2001: 556-562.
+	\bibitem{mumod}Lin C J. On the convergence of multiplicative update algorithms for nonnegative matrix factorization[J]. IEEE Transactions on Neural Networks, 2007, 18(6): 1589-1596.
+	\bibitem{muacc}N. Gillis and F. Glineur,"Accelerated Multiplicative Updates and hierarchical ALS Algorithms for Nonnegative Matrix Factorization"
+	\bibitem{mumod2}Gonzalez E F, Zhang Y. Accelerating the Lee-Seung algorithm for nonnegative matrix factorization[R]. 2005.
+	\bibitem{alspgd}Lin C J. Projected gradient methods for nonnegative matrix factorization[J]. Neural computation, 2007, 19(10): 2756-2779.
+	\bibitem{apbb}Han, Lixing  Neumann, Michael Prasad, Upendra. (2010). Alternating projected Barzilai-Borwein methods for Nonnegative Matrix Factorization. Electronic transactions on numerical analysis ETNA. 36. 54-82. 
+	\bibitem{hals}Cichocki A, Phan A H. Fast local algorithms for large scale nonnegative matrix and tensor factorizations[J]. IEICE transactions on fundamentals of electronics, communications and computer sciences, 2009, 92(3): 708-721.
+	\bibitem{rk1admm}Song D, Meyer D A, Min M R. Fast nonnegative matrix factorization with rank-one admm[C]//NIPS 2014 Workshop on Optimization for Machine Learning (OPT2014). 2014.
+	\bibitem{aoadmm}Huang K, Sidiropoulos N D, Liavas A P. A flexible and efficient algorithmic framework for constrained matrix and tensor factorization[J]. IEEE Transactions on Signal Processing, 2016, 64(19): 5052-5065.
+\end{thebibliography}
 \end{document}
 
 

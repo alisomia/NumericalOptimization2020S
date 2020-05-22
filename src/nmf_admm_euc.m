@@ -1,13 +1,13 @@
-function [U, V, info] = nmf_admm_euc(X, r, opt)
+function [W, H, info] = nmf_admm_euc(V, r, opt)
 % Alternative Direction Multiplier method (ADMM) for NMF with metic
 % euclidean
-%  ref:
+% % % %  ref:
 %  DongjinSong?,DavidA.Meyer?,MartinRenqiangMin?,  "FastNonnegativeMatrixFactorizationwith Rank-oneADMM
 %
 %
 %
 
-[m,n] = size(X);
+[m,n] = size(V);
 if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
 if ~isfield(opt, 'tol'); tol = 1e-5; else; tol = opt.tol; end
 %if ~isfield(opt,'metric');metric = "KL"; else; metric = opt.metric; end
@@ -16,30 +16,30 @@ if ~isfield(opt, 'rho'); rho = 5; else; rho = opt.rho; end
 
 % random initialization
 if isfield(opt,'init')
-    U = opt.init.W;
-    V = opt.init.H;
+    W = opt.init.W;
+    H = opt.init.H;
 else
-    U = rand(m,r); V = rand(r,n);
+    W = rand(m,r); H = rand(r,n);
 end
 epoch = 0;
 loss = zeros(1, maxiter);
 t0   = cputime;
-S = U;
-T = V;
-Lambda = zeros(size(U));
-Pi = zeros(size(V));
+S = W;
+T = H;
+Lambda = zeros(size(W));
+Pi = zeros(size(H));
 
 for epoch = 1:maxiter
-  U = (X*V'+rho*S-Lambda)/(V*V'+rho*eye(r));
-  V = (U'*U+rho*eye(r))\(U'*X+rho*T-Pi);
-  S = U + Lambda/rho;
-  S(S<eps) = eps;
-  T = V + Pi/rho;
-  T(T<eps) = eps;
-  Lambda = Lambda + rho*(U-S);
-  Pi = Pi + rho*(V-T);
-  loss(epoch) = metric_euc(X,U,V);
-      if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
+    W = (V*H'+rho*S-Lambda)/(H*H'+rho*eye(r));
+    H = (W'*W+rho*eye(r))\(W'*V+rho*T-Pi);
+    S = W + Lambda/rho;
+    S(S<eps) = eps;
+    T = H + Pi/rho;
+    T(T<eps) = eps;
+    Lambda = Lambda + rho*(W-S);
+    Pi = Pi + rho*(H-T);
+    loss(epoch) = metric_euc(V,W,H);
+    if epoch>1 && abs(loss(epoch)-loss(epoch-1))<tol*loss(epoch-1)
         break;
     end
 end

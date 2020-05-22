@@ -1,6 +1,23 @@
-\contentsline {section}{\numberline {1}Problem Setting}{1}
-\contentsline {section}{\numberline {2}Methods based on MU}{1}
-\contentsline {section}{\numberline {3}Methods based on ALS}{1}
-\contentsline {section}{\numberline {4}Methods based on HALS}{1}
-\contentsline {section}{\numberline {5}Methods based on ADMM}{1}
-\contentsline {section}{\numberline {6}A Primal Dual Formulation of KL divergence}{1}
+\contentsline {section}{\numberline {1}Problem Setting}{2}
+\contentsline {section}{\numberline {2}Methods based on MU}{2}
+\contentsline {subsection}{\numberline {2.1}MU and its convergence analysis}{2}
+\contentsline {subsection}{\numberline {2.2}Modified and Accelerated MU}{3}
+\contentsline {paragraph}{Modified MU}{4}
+\contentsline {subsection}{\numberline {2.3}Accelerated MU}{4}
+\contentsline {subsection}{\numberline {2.4}Experiments}{5}
+\contentsline {section}{\numberline {3}Methods based on ALS}{5}
+\contentsline {subsection}{\numberline {3.1}Naive ALS}{6}
+\contentsline {subsection}{\numberline {3.2}Projected BB method based ALS}{6}
+\contentsline {subsection}{\numberline {3.3}Projected Gradient Descent based ALS}{7}
+\contentsline {subsection}{\numberline {3.4}Hierarchical ALS and its acceleration}{8}
+\contentsline {subsection}{\numberline {3.5}Numerical Results}{8}
+\contentsline {section}{\numberline {4}Methods based on ANLS}{8}
+\contentsline {subsection}{\numberline {4.1}Block Pivoting}{8}
+\contentsline {subsection}{\numberline {4.2}Active Set}{8}
+\contentsline {subsection}{\numberline {4.3}Grouped Active Set}{8}
+\contentsline {section}{\numberline {5}Methods based on ADMM}{8}
+\contentsline {subsection}{\numberline {5.1}a short introduction to ADMM framework}{8}
+\contentsline {subsection}{\numberline {5.2}Naive ADMM}{9}
+\contentsline {subsection}{\numberline {5.3}Alternating Optimizing ADMM}{10}
+\contentsline {section}{\numberline {6}A new method: LMF-ADMM}{10}
+\contentsline {section}{\numberline {7}Overall Numerical Experiment}{11}
