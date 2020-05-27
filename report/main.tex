@@ -797,10 +797,10 @@ We next the result also on the normalized matrices.
 
 \section{Discussion and Improvement}
 \subsection{Discussion}
-	From the experiment we can find that 
+	From the experiment we can find that if the rank is small or the residual is small, then LMF-ADMM method behaves well, since in the small residual case, the LMF is a good choice of  NLS. However, if the rank is too large, the LMF behaves very poor. As the experiment indicates, in 100*100 case our proposed method is powerful, but things changed in 1000*1000 case and real datebase.
 	
 \subsection{Possible Improvement of LMF-ADMM}
-
+	Several improvement can be proposed to alleviate the small-residual-dependence. For example, we can use sequencing optimization. Suppose $r = r_1r_2$, then we can do $r_1$ times of rank $r_2$ LMF-ADMM. Practically it can reach the performance of MU and ALS method in YALE64.
 \begin{thebibliography}{99}  
 	\bibitem{review}Gillis N. Nonnegative matrix factorization: Complexity, algorithms and applications[J]. Unpublished doctoral dissertation, Université catholique de Louvain. Louvain-La-Neuve: CORE, 2011.
 	\bibitem{mu}Lee D D, Seung H S. Algorithms for non-negative matrix factorization[C]//Advances in neural information processing systems. 2001: 556-562.
