@@ -16,7 +16,7 @@ func = {@nmf_mu, @nmf_mumod, @nmf_muacc, @nmf_als, ...
 tic
 for i = 1:size(func,2)
     tic
-[~,~,info] = feval(func{i}, yale64,5,opt);
+[~,~,info] = feval(func{i}, yale64/256,2,opt);
 toc
 RESULT(i,1) = info.loss(10);
 RESULT(i,2) = info.loss(50);

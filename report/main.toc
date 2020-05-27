@@ -2,19 +2,22 @@
 \contentsline {section}{\numberline {2}Methods based on MU}{2}
 \contentsline {subsection}{\numberline {2.1}MU and its convergence analysis}{2}
 \contentsline {subsection}{\numberline {2.2}Modified and Accelerated MU}{3}
-\contentsline {paragraph}{Modified MU}{3}
+\contentsline {paragraph}{Modified MU}{4}
 \contentsline {subsection}{\numberline {2.3}Accelerated MU}{4}
 \contentsline {section}{\numberline {3}Methods based on ALS}{5}
 \contentsline {subsection}{\numberline {3.1}Naive ALS}{5}
 \contentsline {subsection}{\numberline {3.2}Projected BB method based ALS}{6}
 \contentsline {subsection}{\numberline {3.3}Projected Gradient Descent based ALS}{7}
 \contentsline {subsection}{\numberline {3.4}Hierarchical ALS and its acceleration}{7}
-\contentsline {section}{\numberline {4}Methods based on ADMM}{7}
+\contentsline {section}{\numberline {4}Methods based on ADMM}{8}
 \contentsline {subsection}{\numberline {4.1}a short introduction to ADMM framework}{8}
-\contentsline {subsection}{\numberline {4.2}Naive ADMM}{8}
-\contentsline {subsection}{\numberline {4.3}Alternating Optimizing ADMM}{8}
-\contentsline {section}{\numberline {5}A new method: LMF-ADMM}{9}
-\contentsline {subsection}{\numberline {5.1}Trust region method}{9}
-\contentsline {subsection}{\numberline {5.2}ADMM solving subproblem}{10}
-\contentsline {section}{\numberline {6}Numerical Experiment (I): Synthesis Data}{11}
+\contentsline {subsection}{\numberline {4.2}Naive ADMM}{9}
+\contentsline {subsection}{\numberline {4.3}Alternating Optimizing ADMM}{9}
+\contentsline {section}{\numberline {5}A new method: LMF-ADMM}{10}
+\contentsline {subsection}{\numberline {5.1}Trust region method}{10}
+\contentsline {subsection}{\numberline {5.2}ADMM solving subproblem}{11}
+\contentsline {section}{\numberline {6}Numerical Experiment (I): Synthesis Data}{12}
 \contentsline {section}{\numberline {7}Numerical Experiment (II): ORL and YALE data}{16}
+\contentsline {section}{\numberline {8}Discussion and Improvement}{19}
+\contentsline {subsection}{\numberline {8.1}Discussion}{19}
+\contentsline {subsection}{\numberline {8.2}Possible Improvement of LMF-ADMM}{19}

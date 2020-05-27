@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2019.12.15)  27 MAY 2020 13:26
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2019.12.15)  27 MAY 2020 15:20
 entering extended mode
 **main.tex
 (F:\Linting\numopt\lab3\report\main.tex
@@ -445,24 +445,34 @@ File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 \tf@toc=\write3
  [1{D:/CTEX/UserData/pdftex/config/pdftex.map{Unicode.sfd}{UGBK.sfd}}
 
-] [2] [3] [4] [5] [6] [7]
+] [2] [3] [4] [5] [6]
+Missing character: There is no å in font cmr10!
+Missing character: There is no ° in font cmr10!
+Missing character: There is no  in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no ² in font cmr10!
+Missing character: There is no ¤ in font cmr10!
+Missing character: There is no å in font cmr10!
+Missing character: There is no ­ in font cmr10!
+Missing character: There is no  in font cmr10!
+ [7] [8]
 
-LaTeX Warning: Citation `CITE' on page 8 undefined on input line 303.
+LaTeX Warning: Citation `CITE' on page 9 undefined on input line 332.
 
-[8] [9] [10] [11] [12] [13] [14] [15] [16]
+[9] [10] [11] [12] [13] [14] [15] [16] [17] [18]
 Missing character: There is no Ã in font cmr10!
 Missing character: There is no © in font cmr10!
- [17]
+ [19] [20]
 (F:\Linting\numopt\lab3\report\main.aux)
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 6100 strings out of 495354
- 80067 string characters out of 3183858
- 192849 words of memory out of 3000000
- 9142 multiletter control sequences out of 15000+200000
+ 6102 strings out of 495354
+ 80087 string characters out of 3183858
+ 191849 words of memory out of 3000000
+ 9144 multiletter control sequences out of 15000+200000
  17173 words of font info for 64 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  44i,12n,43p,656b,568s stack positions out of 5000i,500n,10000p,200000b,50000s
@@ -476,9 +486,9 @@ eX/fonts/type1/public/amsfonts/cm/cmr8.pfb><D:/CTEX/MiKTeX/fonts/type1/public/a
 msfonts/cm/cmsy10.pfb><D:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
 <D:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm/cmti10.pfb><D:/CTEX/MiKTeX/fonts
 /type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on main.pdf (17 pages, 221659 bytes).
+Output written on main.pdf (20 pages, 232137 bytes).
 PDF statistics:
- 109 PDF objects out of 1000 (max. 8388607)
+ 119 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

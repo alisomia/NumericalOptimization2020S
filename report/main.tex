@@ -239,6 +239,35 @@ The whole algorithm uses PBBNLS to update each steps.
 \subsection{Projected Gradient Descent based ALS}
 \cite{alspgd} proposed a projected gradient descent method to solve the subproblem. 
 %todo write the ALSPGD part.
+小鲤子:
+
+\begin{algorithm}[htp]
+	\caption{Projected Gradient Method}%算法标题
+	\begin{algorithmic}[1]%一行一个标行号
+		\STATE Given $V,W^0,H^0,M,k=0,\sigma = 0.01, \beta = 0.1$ 
+		\WHILE {$k < M$}
+		\STATE $k = k + 1$
+		\FOR {$j = 1:m$}
+		\STATE $x_{k-1} = H^{k-1}(:,j), h = V(:,j)$
+		\STATE Compute $g_{k-1} = \nabla f(x_{k-1})$
+		\STATE Find the first nonnegative integer $t$ that $f(x_{k}) - f(x_{k-1})\leq -\sigma \beta^t \|g_{k-1}\|^2$,$x_{k} = P(x_{k-1} - \beta^t g_{k-1})$
+		\STATE $H^k(:,j) = P(x_{k-1} - \beta^t g_{k-1})$  
+		\ENDFOR
+		\FOR {$i = 1:n$}
+		\STATE $x_{k-1} = W^{k-1}(:,j), h = V(:,j)$
+		\STATE Compute $g_{k-1} = \nabla f(x_{k-1})$
+		\STATE Find the first nonnegative integer $t$ that $f(x_{k}) - f(x_{k-1})\leq -\sigma \beta^t \|g_{k-1}\|^2$,$x_{k} = P(x_{k-1} - \beta^t g_{k-1})$
+		\STATE $W^k(:,j) = P(x_{k-1} - \beta^t g_{k-1})$  
+		\ENDFOR		
+		
+		\IF {$W^k,H^k$ satisfy stopping criterion }
+		\STATE break
+		\ENDIF
+		\ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+
 \subsection{Hierarchical ALS and its acceleration}
 Hierarchical  ALS \cite{hals} solves subproblem by LS with rank one modification. More precisely, we solve the linear problem column by column in $W$, and row by row in $H$ in one epoch's update. Here is  the algorithm, written in MATLAB format in order to make the idea of row/column by row/column more clear.
 
@@ -430,10 +459,11 @@ In this section we test aforementioned algorithms in the $m = n = 100, r = 5$, t
 	\item totally full rank $V_5 = rand(100)$
 \end{enumerate}
 
-The following algorithm will be tested: MU, MUmod, MUacc, ALS, HALS, HALSacc, ALSPGD, APBB, ANLSBPP, ANLSas, ANLSgroup, ADMM, AO-ADMM, and our LMF-ADMM. Here ANLS does not appear in this report, and the solver of subproblem is written by Jingu Kim.
+The following algorithm will be tested: MU, MUmod, MUacc, ALS, HALS, HALSacc, ALSPGD, APBB, ANLSBPP, ANLSas, ANLSgroup, ADMM, AO-ADMM, and our LMF-ADMM. Here ANLS does not appear in this report, and the solver of subproblem is written by Jingu Kim. The other methods are all introduced in previous sections. We run for 300 iterations, and for subproblem we always do 10 iterations. The rest parameter setting please refer the code. The experiment here and next section runs on my laptop, with CPU inter i7-6700HQ.
 
-Rank 5 result 
+We first show Case 1-5 in 100*100 matrices.
 \begin{table}[H]
+	\caption{Case 1 for 100*100 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|l|}
 		\hline
@@ -457,8 +487,8 @@ Rank 5 result
 \end{table} 
 
 
-2 
 \begin{table}[H]
+		\caption{Case 2 for 100*100 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|l|}
 		\hline
@@ -481,8 +511,9 @@ Rank 5 result
 	\end{tabular}
 \end{table}
 
-3
+
 \begin{table}[H]
+		\caption{Case 3 for 100*100 matrices}
 		\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -504,8 +535,8 @@ Rank 5 result
 	\end{tabular}
 \end{table}
 
-4
 \begin{table}[H]
+		\caption{Case 4 for 100*100 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -527,9 +558,8 @@ Rank 5 result
 	\end{tabular}
 \end{table}
 
- 5 
- 
  \begin{table}[H]
+ 		\caption{Case 5 for 100*100 matrices}
  	\centering
  	\begin{tabular}{|l|r|r|r|r|r|}
  		\hline
@@ -550,9 +580,9 @@ Rank 5 result
  		LMF-ADMM & 26.65626                & 26.46923                & 26.46770                 & 26.46701                 & 53.78125                     \\ \hline
  	\end{tabular}
  \end{table}
-
-1000 raknk 5 
+Next we run our algorithm in some 1000*100 matrices and see their performance
 \begin{table}[H]
+		\caption{Case 1 for 1000*1000 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -576,6 +606,7 @@ Rank 5 result
 
 
 \begin{table}[H]
+		\caption{Case 2 for 1000*1000 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -597,8 +628,8 @@ Rank 5 result
 	\end{tabular}
 \end{table}
 
-1000 rank 10 
 \begin{table}[H]
+		\caption{Case 4 for 1000*1000 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -619,8 +650,10 @@ Rank 5 result
 		LMF-ADMM & 186.29                  & 180.38                  & 178.41                   & 177.64                   & 206.25                       \\ \hline
 	\end{tabular}
 \end{table}
-1000 rand
+
+
 \begin{table}[H]
+		\caption{Case 5 for 1000*1000 matrices}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -642,8 +675,13 @@ Rank 5 result
 	\end{tabular}
 \end{table}
 \section{Numerical Experiment (II): ORL and YALE data}
-ORL r = 25
+In this section we test our algorithm in some face recognition datebase. Some available database are
+\begin{enumerate}
+	\item ORL database, 400*1024
+	\item YALE64 database, 165*1096
+\end{enumerate} 
 \begin{table}[H]
+	\caption{Result for ORL, $r = 25$}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -664,8 +702,9 @@ ORL r = 25
 		LMF-ADMM & 17030.63                & 11659.28                & 11389.58                 & 11384.44                 & 1057.09                      \\ \hline
 	\end{tabular}
 \end{table}
- orl rank = 5
+
 \begin{table}[H]
+		\caption{Result for ORL, $r =5$}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -687,8 +726,8 @@ ORL r = 25
 	\end{tabular}
 \end{table}
 
-yale64 15
 \begin{table}[H]
+		\caption{Result for YALE64, $r = 15$}
 	\centering
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -711,6 +750,7 @@ yale64 15
 \end{table}
 
 \begin{table}[H]
+		\caption{Result for YALE64, $r = 5$}
 	\centering 
 	\begin{tabular}{|l|r|r|r|r|r|}
 		\hline
@@ -731,6 +771,36 @@ yale64 15
 		LMF-ADMM & 28969.72                & 27905.80                & 27905.80                 & 27905.80                 & 326.61                       \\ \hline
 	\end{tabular}
 \end{table}
+We next the result also on the normalized matrices.
+\begin{table}[H]
+		\caption{Result for YALE64/256, $r = 5$}
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 140.31                  & 125.42                  & 124.36                   & 124.08                   & 9.88                         \\ \hline
+		MUmod    & 139.84                  & 126.54                  & 124.81                   & 124.08                   & 9.19                         \\ \hline
+		MUacc    & 124.33                  & 124.06                  & 124.06                   & 124.06                   & 13.22                        \\ \hline
+		ALS      & 124.34                  & 124.14                  & 124.14                   & 124.14                   & 8.88                         \\ \hline
+		HALS     & 129.00                  & 125.47                  & 124.06                   & 124.06                   & 7.92                         \\ \hline
+		HALSacc  & 126.32                  & 124.07                  & 124.06                   & 124.06                   & 9.28                         \\ \hline
+		APBB     & 78.41                   & 74.29                   & 74.01                    & 73.44                    & 196.33                       \\ \hline
+		ALSPGD   & 78.18                   & 77.13                   & 77.13                    & 77.13                    & 3.59                         \\ \hline
+		ANLSas   & 76.19                   & 74.07                   & 73.60                    & 73.38                    & 28.48                        \\ \hline
+		ANLSgp   & 75.69                   & 73.96                   & 73.82                    & 73.76                    & 191.20                       \\ \hline
+		ANLSbpp  & 76.37                   & 74.18                   & 73.57                    & 73.38                    & 29.59                        \\ \hline
+		ADMM     & 70.75                   & 69.44                   & 69.44                    & 69.49                    & 10.69                        \\ \hline
+		AO-ADMM  & 76.28                   & 74.08                   & 73.73                    & 73.49                    & 30.44                        \\ \hline
+		LMF-ADMM & 157.33                  & 157.33                  & 157.33                   & 157.33                   & 801.42                       \\ \hline
+	\end{tabular}
+\end{table}
+
+\section{Discussion and Improvement}
+\subsection{Discussion}
+	From the experiment we can find that 
+	
+\subsection{Possible Improvement of LMF-ADMM}
+
 \begin{thebibliography}{99}  
 	\bibitem{review}Gillis N. Nonnegative matrix factorization: Complexity, algorithms and applications[J]. Unpublished doctoral dissertation, Université catholique de Louvain. Louvain-La-Neuve: CORE, 2011.
 	\bibitem{mu}Lee D D, Seung H S. Algorithms for non-negative matrix factorization[C]//Advances in neural information processing systems. 2001: 556-562.
