@@ -15,11 +15,8 @@
 	
 	\section*{}
 
-% TODO: write an abstract. 
-
 In this lab, we surveyed several methods on non-negative matrix factorization (NMF). Most of introduced algorithms are concerning NMF under the Euclidean(Frobenius) metric, however, some of them can be naturally extended to KL divergence. We introduce methods based on Multiplicative Update, Alternative Least Square, Alternative Non-negative Least Square, Alternative Direction of Multiplier Methods. Moreover, a new algorithm based on Nonlinear Least Square while subproblem is solved by ADMM is proposed. In the sections, we will analyze the convergence and test their performance, and finally test them in the popular ORL and Yale database.
 \section{Problem Setting}
-% TODO: write the euc and kl setting
 Nonnegative matrix factorization(NMF) considers the following optimization problem,
 \begin{equation}
 \begin{aligned}
@@ -47,7 +44,6 @@ We recall some basic properties according to \cite{review}:
 	\item The gradient of $W$ is $\nabla W = W(HH')-VH'$, and $\nabla H = W'WH-W'V$
 \end{enumerate}
 \section{Methods based on MU}
-% todo : explian what is MU
 In this section we introduce MU method and its variants, like \cite{mu,muacc,mumod,mumod2}.
 \subsection{MU and its convergence analysis}
 The basic idea of MU is simple, we choose a suitable stepsize and do gradient descent. Concretely, consider the gradient descent:
@@ -159,8 +155,7 @@ For any given $\rho_W$ and $\rho_H$, we introduce the following algorithm:
 \end{algorithm}
 Here $\rho_W = 1+\frac{mn+nr}{mr+m}$, $\rho_H = 1+\frac{mn+mr}{nr+n}$. $\delta$ is chosen to control the stop criterion and is chosen as 0.1 in our code (see \textbf{mnf\_muacc.m}).
 Notice that the method is just replace an alternative update to a new update strategy with condition, hence all the convergence analysis makes sense in the accelerated version. 
-\subsection{Experiments}
-%todo complete the experiment of MU
+
 \section{Methods based on ALS}
 
 The idea of Alternative (Nonnegative) Least Square is instead of solving the original problem, we optimize two linear problem alternatively.
@@ -269,18 +264,15 @@ Hierarchical  ALS \cite{hals} solves subproblem by LS with rank one modification
 \end{algorithm}
 
 Also, an accelerated version is provided in \cite{muacc} and implemented in this lab, see \textbf{nmf\_halsacc.m}
-
-\subsection{Numerical Results}
-%todo fill the numerical result
+\iffalse
 \section{Methods based on ANLS}
-%TODO  will delete this section if unnecessary
 
 \subsection{Block Pivoting}
 
 \subsection{Active Set}
 
 \subsection{Grouped Active Set}
-
+\fi
 \section{Methods based on ADMM}
 In this section we introduce Alternative Direction of Multiplier Method, which is powerful in handling constraint problem and non-smooth problem.
 \subsection{a short introduction to ADMM framework}
@@ -350,7 +342,7 @@ AO-ADMM is use ADMM to solve the subproblem in ALS, introduced in \cite{aoadmm}.
 
 \section{A new method: LMF-ADMM}
 In this section we propose a new method based on LMF method of Nonlinear Least Square, and use ADMM to solve the subproblem.
-
+\subsection{Trust region method}
 We first recall LMF method, regarding NMF into a nonlinear least square problem: 
 Suppose we have $x_k$ and $J_k = \grad r(x_k)$. Here $r(x) : \R^m \to \R^n$ is the residual function and our goal is to minimize $r'r$
 
@@ -360,8 +352,8 @@ Without constraint, the minimizer has a closed form:
 $$ x_k + (J_k'J_k + \nu I)^{-1}(J_k'r_k)$$
 That is equivalent to LMF method. Inspired by this, we proposed an ANLS approach of LMF method.
 
-\begin{algorithm}
-	\caption{LMF}
+\begin{algorithm}[H]
+	\caption{LMF1}
 	\begin{algorithmic}[1]
 		\STATE $R = V - WH$
 		\FOR{$i=1:iter$}
@@ -382,8 +374,363 @@ That is equivalent to LMF method. Inspired by this, we proposed an ANLS approach
 		\ENDFOR
 	\end{algorithmic}
 \end{algorithm}
-\section{Overall Numerical Experiment}
+or a more complicated trust region update method
+\begin{algorithm}[H]
+	\caption{LMF2}
+	\begin{algorithmic}[1]
+		\STATE $R = V - WH$
+		\FOR{$i=1:iter$}
+		\STATE $[W^+, H^+] = admm_update(W,H)$
+		\STATE $R^+ = V - W^+H^+$
+		\STATE $dW = W^+ - W, dH = H^+-H$
+		\STATE $\Delta g = \frac 12[(dW, \nu dW - \grad W) + (dH, \nu dH - \grad H)]$
+		\IF{$\Delta g<0$}
+		\STATE{$\nu = 4\nu$}
+		\ENDIF
+		\STATE $\Delta f = \|R\|_F^2 - \|R^+\|_F^2$
+		\IF{$\Delta f > 0$}
+		\STATE $W = W^+, H = H^+, R = R^+, \mu = \mu/2$
+		\STATE $\grad W = WHH'-VH', \grad H = W'WH-W'V$
+		\ELSE
+		\STATE $\mu = 2\mu$
+		\ENDIF
+		\ENDFOR
+	\end{algorithmic}
+\end{algorithm}
 
+\subsection{ADMM solving subproblem}
+We introduce ADMM for solving the subproblem, since direct projection based solver will behave bad in numeric. Consider the following Augmented Lagrangian.
+
+$$L(x, z, \alpha, \rho) = \frac{1}{2}\|J(z-u) - d\|^2 + \frac{nu}{2}\|x-u\|^2 + (\alpha, x-z) + \frac{\rho}{2}\|x-z\|^2$$
+
+Here $x = vec(W,H)$, transforming the ensemble of $W$ and $H$ into a global vector, $z = vec(Waux, Haux)$ is the vectorized auxiliary variable, $\alpha = vec(\alpha_W, \alpha_H)$ is vectorized multiplier. $u = vec(W_0, H_0)$ is the starting point.
+\begin{algorithm}[H]
+	\caption{LMF-ADMM}
+	\begin{algorithmic}[1]
+		\STATE $\min z: u + (J'J + rho)^{-1}(J'd + \rho(x-u) + \alpha)$
+		\STATE $\min x: (\nu u + \rho z - \alpha)/(\nu + \rho)$
+		\STATE $x = \P(x)$
+		\STATE update $\alpha = \alpha + \mu (x-z)$
+	\end{algorithmic}
+\end{algorithm}
+
+However, this form is not computable, since we do not know the form of $J$. We first try to understand the mechanism of $J,J', J'J$ at point $W, H$
+
+Notice that $$J(\tilde W, \tilde H) = W\tilde H + \tilde W H$$
+$$J'(\tilde V) = [\tilde VH', W'\tilde V]$$
+$$(J'J)(\tilde W, \tilde H) = [\tilde WHH' + W\tilde HH', W'\tilde WH + W'W\tilde H]$$ 
+Hence we can use the mapping $[\tilde W, \tilde H] = (J'J)[\tilde W, \tilde H]$ and apply krylov subspace method to solve the problem.
+\section{Numerical Experiment (I): Synthesis Data}
+In this section we test aforementioned algorithms in the $m = n = 100, r = 5$, the initial is random given and we run 1000 iterations. We test the following case: 
+\begin{enumerate}
+	\item actually low rank: $V_1$ is a non-negative low rank matrix, generated by $rand(m,r)*rand(r,n)$
+	\item multiplicative noise: $V_2 = V_1.*(1+0.01*rand(100))$
+	\item additive noise :$V_3 =  V_1 + (0.01)*max(V_1)*rand(100)$
+	\item intermediate rank $V_4 = rand(100,10)*rand(10,100)$
+	\item totally full rank $V_5 = rand(100)$
+\end{enumerate}
+
+The following algorithm will be tested: MU, MUmod, MUacc, ALS, HALS, HALSacc, ALSPGD, APBB, ANLSBPP, ANLSas, ANLSgroup, ADMM, AO-ADMM, and our LMF-ADMM. Here ANLS does not appear in this report, and the solver of subproblem is written by Jingu Kim.
+
+Rank 5 result 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|l|}
+		\hline
+		& \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}        &  \\ \hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} &  \\ \hline
+		MU       & 1.82E+01                & 1.20E+01                & 4.74E+00                 & 1.65E+00                 & 0.11                         &  \\ \hline
+		MUmod    & 1.86E+01                & 1.31E+01                & 6.94E+00                 & 1.77E+00                 & 0.30                         &  \\ \hline
+		MUacc    & 2.31E+00                & 1.32E+00                & 7.68E-01                 & 2.74E-01                 & 1.44                         &  \\ \hline
+		ALS      & 6.23E+00                & 1.50E+00                & 7.46E-01                 & 1.52E-01                 & 0.33                         &  \\ \hline
+		HALS     & 1.05E+01                & 1.89E+00                & 1.38E+00                 & 6.82E-01                 & 0.30                         &  \\ \hline
+		HALSacc  & 1.02E+01                & 2.13E+00                & 1.26E+00                 & 3.41E-01                 & 0.53                         &  \\ \hline
+		APBB     & 2.81E+00                & 1.41E+00                & 7.96E-01                 & 1.25E-01                 & 6.19                         &  \\ \hline
+		ALSPGD   & 2.55E+00                & 9.35E-01                & 6.03E-01                 & 1.45E-01                 & 0.58                         &  \\ \hline
+		ANLSas   & 2.67E+00                & 1.02E+00                & 2.41E-01                 & 9.08E-03                 & 1.56                         &  \\ \hline
+		ANLSgp   & 2.67E+00                & 1.02E+00                & 2.41E-01                 & 9.08E-03                 & 7.97                         &  \\ \hline
+		ANLSbpp  & 2.67E+00                & 1.02E+00                & 2.41E-01                 & 9.08E-03                 & 1.00                         &  \\ \hline
+		ADMM     & 1.99E+00                & 9.44E-01                & 7.75E-01                 & 5.06E-02                 & 0.22                         &  \\ \hline
+		AO-ADMM  & 1.89E+00                & 9.22E-01                & 6.94E-01                 & 5.60E-01                 & 0.77                         &  \\ \hline
+		LMF-ADMM & 4.92E+00                & 1.08E+00                & 2.56E-01                 & 2.49E-03                 & 58.95                        &  \\ \hline
+	\end{tabular}
+\end{table} 
+
+
+2 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|l|}
+		\hline
+		& \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}        &  \\ \hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} &  \\ \hline
+		MU       & 11.73354                & 9.43582                 & 6.46684                  & 4.90432                  & 0.18750                      &  \\ \hline
+		MUmod    & 19.63202                & 13.88192                & 8.24987                  & 3.82733                  & 0.21875                      &  \\ \hline
+		MUacc    & 4.63789                 & 3.74934                 & 3.59990                  & 3.52362                  & 1.28125                      &  \\ \hline
+		ALS      & 4.96628                 & 3.98324                 & 3.71764                  & 3.52806                  & 0.35938                      &  \\ \hline
+		HALS     & 7.04732                 & 3.76370                 & 3.61449                  & 3.52758                  & 0.29688                      &  \\ \hline
+		HALSacc  & 5.59787                 & 3.72378                 & 3.61851                  & 3.52389                  & 0.42188                      &  \\ \hline
+		APBB     & 4.35276                 & 3.83743                 & 3.66441                  & 3.52452                  & 5.82813                      &  \\ \hline
+		ALSPGD   & 3.72733                 & 3.52501                 & 3.51194                  & 3.50714                  & 1.60938                      &  \\ \hline
+		ANLSas   & 3.78897                 & 3.55926                 & 3.52209                  & 3.50764                  & 1.14063                      &  \\ \hline
+		ANLSgp   & 3.78897                 & 3.55926                 & 3.52209                  & 3.50764                  & 7.42188                      &  \\ \hline
+		ANLSbpp  & 3.78897                 & 3.55926                 & 3.52209                  & 3.50764                  & 1.12500                      &  \\ \hline
+		ADMM     & 3.60405                 & 3.58949                 & 3.52744                  & 3.50635                  & 0.23438                      &  \\ \hline
+		AO-ADMM  & 3.90334                 & 3.59783                 & 3.53715                  & 3.50812                  & 1.10938                      &  \\ \hline
+		LMF-ADMM & 5.05952                 & 3.52288                 & 3.50702                  & 3.50629                  & 52.53125                     &  \\ \hline
+	\end{tabular}
+\end{table}
+
+3
+\begin{table}[H]
+		\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10}  & \multicolumn{1}{l|}{50}  & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 13.52824                 & 8.02069                  & 6.19232                  & 4.38261                  & 0.21875                      \\ \hline
+		MUmod    & 18.39742                 & 12.46458                 & 8.33057                  & 3.76292                  & 0.34375                      \\ \hline
+		MUacc    & 3.87478                  & 1.48928                  & 1.11853                  & 0.96705                  & 1.40625                      \\ \hline
+		ALS      & \multicolumn{1}{c|}{NaN} & \multicolumn{1}{c|}{NaN} & \multicolumn{1}{c|}{NaN} & \multicolumn{1}{c|}{NaN} & \multicolumn{1}{c|}{f}       \\ \hline
+		HALS     & 3.47972                  & 1.74977                  & 1.63396                  & 1.30570                  & 0.32813                      \\ \hline
+		HALSacc  & 3.47727                  & 1.74606                  & 1.58582                  & 1.25207                  & 0.51563                      \\ \hline
+		APBB     & 2.70701                  & 1.82558                  & 1.60890                  & 0.96966                  & 6.37500                      \\ \hline
+		ALSPGD   & 2.15294                  & 1.41451                  & 1.01194                  & 0.93130                  & 1.40625                      \\ \hline
+		ANLSas   & 1.69059                  & 0.96913                  & 0.93201                  & 0.92897                  & 1.14063                      \\ \hline
+		ANLSgp   & 1.69059                  & 0.96913                  & 0.93201                  & 0.92897                  & 7.96875                      \\ \hline
+		ANLSbpp  & 1.69059                  & 0.96913                  & 0.93201                  & 0.92897                  & 0.85938                      \\ \hline
+		ADMM     & 1.40970                  & 1.31235                  & 1.35918                  & 0.93221                  & 0.21875                      \\ \hline
+		AO-ADMM  & 1.66494                  & 1.02083                  & 0.93671                  & 0.92899                  & 0.78125                      \\ \hline
+		LMF-ADMM & 3.55281                  & 0.93506                  & 0.92922                  & 0.92889                  & 50.93750                     \\ \hline
+	\end{tabular}
+\end{table}
+
+4
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10}      & \multicolumn{1}{l|}{50}      & \multicolumn{1}{l|}{100}     & \multicolumn{1}{l|}{300}     & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 13.57983                     & 9.57117                      & 7.88564                      & 5.40414                      & 0.20313                      \\ \hline
+		MUmod    & 18.43720                     & 14.24323                     & 9.12457                      & 1.97093                      & 0.21875                      \\ \hline
+		MUacc    & 4.85143                      & 1.21040                      & 1.01626                      & 0.95890                      & 1.23438                      \\ \hline
+		ALS      & \multicolumn{1}{r|}{4.08123} & \multicolumn{1}{r|}{1.89589} & \multicolumn{1}{r|}{1.86719} & \multicolumn{1}{r|}{1.47343} & \multicolumn{1}{r|}{0.23438} \\ \hline
+		HALS     & 7.83307                      & 1.66307                      & 1.39283                      & 1.01988                      & 0.34375                      \\ \hline
+		HALSacc  & 7.62153                      & 2.06372                      & 1.52949                      & 0.97912                      & 0.43750                      \\ \hline
+		APBB     & 2.60248                      & 1.60447                      & 1.52344                      & 1.11161                      & 6.23438                      \\ \hline
+		ALSPGD   & 1.53281                      & 0.97816                      & 0.93703                      & 0.92972                      & 1.01563                      \\ \hline
+		ANLSas   & 1.74547                      & 1.05425                      & 0.97569                      & 0.93301                      & 1.45313                      \\ \hline
+		ANLSgp   & 1.74547                      & 1.05425                      & 0.97569                      & 0.93301                      & 7.57813                      \\ \hline
+		ANLSbpp  & 1.74547                      & 1.05425                      & 0.97569                      & 0.93301                      & 0.87500                      \\ \hline
+		ADMM     & 1.33932                      & 1.02559                      & 0.95570                      & 0.92964                      & 0.21875                      \\ \hline
+		AO-ADMM  & 2.00599                      & 1.12812                      & 0.99042                      & 0.94364                      & 0.98438                      \\ \hline
+		LMF-ADMM & 3.35264                      & 0.93401                      & 0.93020                      & 0.92893                      & 56.48438                     \\ \hline
+	\end{tabular}
+\end{table}
+
+ 5 
+ 
+ \begin{table}[H]
+ 	\centering
+ 	\begin{tabular}{|l|r|r|r|r|r|}
+ 		\hline
+ 		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+ 		MU       & 27.19286                & 26.90420                & 26.86254                 & 26.74390                 & 0.21875                      \\ \hline
+ 		MUmod    & 27.88722                & 26.83411                & 26.56678                 & 26.40138                 & 0.31250                      \\ \hline
+ 		MUacc    & 26.79257                & 26.41016                & 26.37401                 & 26.36624                 & 1.15625                      \\ \hline
+ 		ALS      & 26.43794                & 26.40644                & 26.40803                 & 26.42186                 & 0.35938                      \\ \hline
+ 		HALS     & 26.59060                & 26.37620                & 26.36408                 & 26.36200                 & 0.28125                      \\ \hline
+ 		HALSacc  & 26.61683                & 26.38218                & 26.36590                 & 26.36232                 & 0.42188                      \\ \hline
+ 		APBB     & 26.45687                & 26.37201                & 26.36953                 & 26.36495                 & 6.31250                      \\ \hline
+ 		ALSPGD   & 26.44448                & 26.36726                & 26.36561                 & 26.36330                 & 1.93750                      \\ \hline
+ 		ANLSas   & 26.39062                & 26.36580                & 26.36292                 & 26.36125                 & 1.79688                      \\ \hline
+ 		ANLSgp   & 26.39062                & 26.36580                & 26.36292                 & 26.36125                 & 8.10938                      \\ \hline
+ 		ANLSbpp  & 26.39062                & 26.36580                & 26.36292                 & 26.36125                 & 1.15625                      \\ \hline
+ 		ADMM     & 26.37509                & 26.34614                & 26.35163                 & 26.35347                 & 0.42188                      \\ \hline
+ 		AO-ADMM  & 26.39926                & 26.36603                & 26.36315                 & 26.36128                 & 0.93750                      \\ \hline
+ 		LMF-ADMM & 26.65626                & 26.46923                & 26.46770                 & 26.46701                 & 53.78125                     \\ \hline
+ 	\end{tabular}
+ \end{table}
+
+1000 raknk 5 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 196.78                  & 161.34                  & 81.09                    & 17.78                    & 18.67                        \\ \hline
+		MUmod    & 197.61                  & 159.68                  & 77.02                    & 22.46                    & 17.78                        \\ \hline
+		MUacc    & 23.69                   & 4.97                    & 2.52                     & 0.90                     & 29.33                        \\ \hline
+		ALS      & 47.72                   & 30.63                   & 8.05                     & 0.71                     & 18.36                        \\ \hline
+		HALS     & 131.97                  & 24.24                   & 23.58                    & 22.11                    & 16.78                        \\ \hline
+		HALSacc  & 112.31                  & 24.58                   & 22.61                    & 7.67                     & 17.64                        \\ \hline
+		APBB     & 23.26                   & 17.19                   & 15.42                    & 1.27                     & 50.92                        \\ \hline
+		ALSPGD   & 26.72                   & 12.06                   & 3.30                     & 2.22                     & 12.66                        \\ \hline
+		ANLSas   & 16.97                   & 2.41                    & 1.06                     & 0.28                     & 21.64                        \\ \hline
+		ANLSgp   & 27.85                   & 12.22                   & 2.61                     & 0.38                     & 102.27                       \\ \hline
+		ANLSbpp  & 24.41                   & 10.53                   & 2.51                     & 0.44                     & 22.02                        \\ \hline
+		ADMM     & 19.45                   & 4.32                    & 4.90                     & 2.89                     & 18.17                        \\ \hline
+		AO-ADMM  & 24.28                   & 9.01                    & 2.38                     & 0.41                     & 32.05                        \\ \hline
+		LMF-ADMM & 31.84                   & 1.58                    & 0.37                     & 0.05                     & 211.63                       \\ \hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 198.49                  & 151.31                  & 74.80                    & 24.82                    & 18.84                        \\ \hline
+		MUmod    & 198.40                  & 157.87                  & 71.48                    & 24.54                    & 20.20                        \\ \hline
+		MUacc    & 27.19                   & 12.39                   & 11.35                    & 11.07                    & 29.23                        \\ \hline
+		ALS      & 33.36                   & 12.50                   & 11.25                    & 11.04                    & 18.03                        \\ \hline
+		HALS     & 135.15                  & 20.84                   & 16.39                    & 11.35                    & 16.92                        \\ \hline
+		HALSacc  & 74.15                   & 22.08                   & 14.91                    & 11.14                    & 19.11                        \\ \hline
+		APBB     & 26.71                   & 23.76                   & 20.40                    & 11.10                    & 50.92                        \\ \hline
+		ALSPGD   & 28.41                   & 20.70                   & 11.65                    & 11.07                    & 19.56                        \\ \hline
+		ANLSas   & 29.68                   & 20.59                   & 16.80                    & 11.04                    & 22.63                        \\ \hline
+		ANLSgp   & 27.52                   & 19.78                   & 13.97                    & 11.04                    & 98.25                        \\ \hline
+		ANLSbpp  & 27.58                   & 19.04                   & 17.65                    & 11.07                    & 21.95                        \\ \hline
+		ADMM     & 21.61                   & 11.87                   & 12.03                    & 11.51                    & 17.95                        \\ \hline
+		AO-ADMM  & 26.57                   & 19.03                   & 12.59                    & 11.04                    & 28.13                        \\ \hline
+		LMF-ADMM & 34.14                   & 11.10                   & 11.03                    & 11.03                    & 246.45                       \\ \hline
+	\end{tabular}
+\end{table}
+
+1000 rank 10 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 325.47                  & 258.97                  & 236.80                   & 184.70                   & 18.63                        \\ \hline
+		MUmod    & 325.04                  & 260.14                  & 244.43                   & 184.05                   & 18.89                        \\ \hline
+		MUacc    & 182.82                  & 177.82                  & 177.63                   & 177.54                   & 31.23                        \\ \hline
+		ALS      & 186.42                  & 178.40                  & 178.13                   & 177.84                   & 20.52                        \\ \hline
+		HALS     & 234.62                  & 191.31                  & 179.44                   & 177.89                   & 16.86                        \\ \hline
+		HALSacc  & 201.10                  & 178.53                  & 177.80                   & 177.59                   & 19.66                        \\ \hline
+		APBB     & 202.02                  & 179.42                  & 178.73                   & 177.57                   & 54.25                        \\ \hline
+		ALSPGD   & 184.14                  & 177.68                  & 177.53                   & 177.52                   & 36.44                        \\ \hline
+		ANLSas   & 179.91                  & 177.54                  & 177.52                   & 177.51                   & 22.28                        \\ \hline
+		ANLSgp   & 180.40                  & 177.57                  & 177.53                   & 177.51                   & 97.50                        \\ \hline
+		ANLSbpp  & 181.41                  & 177.67                  & 177.61                   & 177.57                   & 19.83                        \\ \hline
+		ADMM     & 180.44                  & 177.84                  & 177.50                   & 177.50                   & 18.28                        \\ \hline
+		AO-ADMM  & 183.68                  & 178.96                  & 177.72                   & 177.59                   & 30.63                        \\ \hline
+		LMF-ADMM & 186.29                  & 180.38                  & 178.41                   & 177.64                   & 206.25                       \\ \hline
+	\end{tabular}
+\end{table}
+1000 rand
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 290.52                  & 287.66                  & 287.04                   & 286.37                   & 17.05                        \\ \hline
+		MUmod    & 290.45                  & 287.62                  & 287.00                   & 286.37                   & 17.86                        \\ \hline
+		MUacc    & 286.23                  & 286.09                  & 286.07                   & 286.07                   & 29.88                        \\ \hline
+		ALS      & 286.27                  & 286.08                  & 286.07                   & 286.07                   & 16.22                        \\ \hline
+		HALS     & 287.37                  & 286.53                  & 286.27                   & 286.12                   & 14.34                        \\ \hline
+		HALSacc  & 287.03                  & 286.27                  & 286.15                   & 286.09                   & 14.27                        \\ \hline
+		APBB     & 286.47                  & 286.13                  & 286.09                   & 286.07                   & 49.22                        \\ \hline
+		ALSPGD   & 286.33                  & 286.09                  & 286.08                   & 286.08                   & 9.86                         \\ \hline
+		ANLSas   & 286.21                  & 286.09                  & 286.07                   & 286.07                   & 20.73                        \\ \hline
+		ANLSgp   & 286.21                  & 286.08                  & 286.07                   & 286.07                   & 104.97                       \\ \hline
+		ANLSbpp  & 286.19                  & 286.08                  & 286.08                   & 286.07                   & 20.61                        \\ \hline
+		ADMM     & 286.22                  & 286.08                  & 286.07                   & 286.07                   & 16.61                        \\ \hline
+		AO-ADMM  & 286.35                  & 286.09                  & 286.07                   & 286.07                   & 26.75                        \\ \hline
+		LMF-ADMM & 286.78                  & 286.14                  & 286.09                   & 286.08                   & 225.22                       \\ \hline
+	\end{tabular}
+\end{table}
+\section{Numerical Experiment (II): ORL and YALE data}
+ORL r = 25
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 19440.65                & 15744.82                & 12926.04                 & 10678.80                 & 9.03                         \\ \hline
+		MUmod    & 19416.06                & 15847.19                & 13029.62                 & 10643.24                 & 8.73                         \\ \hline
+		MUacc    & 10580.54                & 10151.85                & 10093.71                 & 10019.69                 & 26.20                        \\ \hline
+		ALS      & 16430.72                & 17949.73                & 20445.01                 & 15497.98                 & 7.80                         \\ \hline
+		HALS     & 11498.96                & 10401.59                & 10192.43                 & 10043.15                 & 6.80                         \\ \hline
+		HALSacc  & 11129.77                & 10229.99                & 10114.94                 & 10029.77                 & 10.36                        \\ \hline
+		APBB     & 10742.71                & 10176.37                & 10083.67                 & 10022.82                 & 166.30                       \\ \hline
+		ALSPGD   & 10323.89                & 10080.27                & 10042.24                 & 10003.47                 & 91.63                        \\ \hline
+		ANLSas   & 10356.45                & 10103.21                & 10035.58                 & 9990.92                  & 31.11                        \\ \hline
+		ANLSgp   & 10325.57                & 10115.27                & 10062.05                 & 10000.40                 & 93.67                        \\ \hline
+		ANLSbpp  & 10314.33                & 10047.80                & 9999.50                  & 9971.23                  & 28.20                        \\ \hline
+		ADMM     & 9762.95                 & 9753.69                 & 9753.68                  & 9753.72                  & 9.02                         \\ \hline
+		AO-ADMM  & 10370.99                & 10102.02                & 10036.93                 & 9983.37                  & 22.52                        \\ \hline
+		LMF-ADMM & 17030.63                & 11659.28                & 11389.58                 & 11384.44                 & 1057.09                      \\ \hline
+	\end{tabular}
+\end{table}
+ orl rank = 5
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 20085.40                & 17308.75                & 15413.77                 & 14732.42                 & 8.23                         \\ \hline
+		MUmod    & 20067.81                & 17406.64                & 15562.47                 & 14787.19                 & 6.98                         \\ \hline
+		MUacc    & 14960.11                & 14661.48                & 14647.24                 & 14643.68                 & 10.19                        \\ \hline
+		ALS      & 14955.29                & 15206.21                & 14928.43                 & 14756.34                 & 6.16                         \\ \hline
+		HALS     & 15583.35                & 14757.70                & 14691.18                 & 14672.70                 & 5.59                         \\ \hline
+		HALSacc  & 15888.10                & 14778.31                & 14682.50                 & 14641.19                 & 6.16                         \\ \hline
+		APBB     & 14881.16                & 14669.87                & 14647.22                 & 14639.27                 & 40.44                        \\ \hline
+		ALSPGD   & 14837.19                & 14756.62                & 14667.70                 & 14638.19                 & 29.34                        \\ \hline
+		ANLSas   & 14699.73                & 14655.41                & 14639.05                 & 14634.60                 & 9.98                         \\ \hline
+		ANLSgp   & 14801.67                & 14649.31                & 14641.85                 & 14632.81                 & 55.14                        \\ \hline
+		ANLSbpp  & 14774.92                & 14651.12                & 14639.58                 & 14634.50                 & 9.67                         \\ \hline
+		ADMM     & 14611.43                & 14611.36                & 14611.36                 & 14611.37                 & 6.55                         \\ \hline
+		AO-ADMM  & 14822.87                & 14667.14                & 14644.08                 & 14634.95                 & 12.64                        \\ \hline
+		LMF-ADMM & 17450.14                & 14745.60                & 14702.23                 & 14695.00                 & 130.97                       \\ \hline
+	\end{tabular}
+\end{table}
+
+yale64 15
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 34990.52                & 23017.40                & 20527.59                 & 19485.95                 & 11.98                        \\ \hline
+		MUmod    & 34936.58                & 22877.60                & 20558.53                 & 19575.53                 & 12.19                        \\ \hline
+		MUacc    & 19537.92                & 19110.92                & 19026.61                 & 18961.13                 & 22.02                        \\ \hline
+		ALS      & 26244.53                & 24230.16                & 23395.79                 & 24250.73                 & 10.38                        \\ \hline
+		HALS     & 20885.16                & 19223.12                & 19014.83                 & 18912.83                 & 12.31                        \\ \hline
+		HALSacc  & 20029.15                & 19139.15                & 18999.31                 & 18822.64                 & 14.50                        \\ \hline
+		APBB     & 19894.14                & 19066.42                & 18898.15                 & 18810.85                 & 344.34                       \\ \hline
+		ALSPGD   & 19466.01                & 19008.36                & 18940.59                 & 18852.89                 & 152.98                       \\ \hline
+		ANLSas   & 19288.68                & 18936.94                & 18857.79                 & 18784.20                 & 30.31                        \\ \hline
+		ANLSgp   & 19388.38                & 18994.20                & 18862.99                 & 18835.54                 & 184.73                       \\ \hline
+		ANLSbpp  & 19409.33                & 18869.82                & 18830.48                 & 18821.90                 & 27.78                        \\ \hline
+		ADMM     & 17805.45                & 17774.16                & 17763.52                 & 17763.47                 & 11.11                        \\ \hline
+		AO-ADMM  & 19444.01                & 18984.55                & 18921.18                 & 18855.77                 & 31.44                        \\ \hline
+		LMF-ADMM & 26481.25                & 26200.66                & 26200.66                 & 26200.66                 & 1517.94                      \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering 
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 35590.77                & 26896.94                & 25999.42                 & 25548.82                 & 10.64                        \\ \hline
+		MUmod    & 35549.14                & 27302.08                & 26293.49                 & 25859.91                 & 10.33                        \\ \hline
+		MUacc    & 25746.54                & 25485.63                & 25478.12                 & 25477.43                 & 15.78                        \\ \hline
+		ALS      & 26646.58                & 25770.85                & 25753.79                 & 25754.79                 & 8.27                         \\ \hline
+		HALS     & 26400.63                & 25519.81                & 25477.96                 & 25477.39                 & 8.91                         \\ \hline
+		HALSacc  & 26341.70                & 25525.97                & 25483.92                 & 25477.39                 & 10.25                        \\ \hline
+		APBB     & 25846.32                & 25682.42                & 25674.44                 & 25477.39                 & 121.55                       \\ \hline
+		ALSPGD   & 25854.18                & 25503.74                & 25478.70                 & 25477.40                 & 23.58                        \\ \hline
+		ANLSas   & 25708.88                & 25498.49                & 25477.40                 & 25477.39                 & 15.47                        \\ \hline
+		ANLSgp   & 25776.14                & 25482.30                & 25477.43                 & 25477.39                 & 143.20                       \\ \hline
+		ANLSbpp  & 25647.57                & 25478.36                & 25477.40                 & 25477.39                 & 13.86                        \\ \hline
+		ADMM     & 25312.44                & 25274.40                & 25274.49                 & 25274.52                 & 9.28                         \\ \hline
+		AO-ADMM  & 25769.20                & 25483.20                & 25477.41                 & 25477.39                 & 19.38                        \\ \hline
+		LMF-ADMM & 28969.72                & 27905.80                & 27905.80                 & 27905.80                 & 326.61                       \\ \hline
+	\end{tabular}
+\end{table}
 \begin{thebibliography}{99}  
 	\bibitem{review}Gillis N. Nonnegative matrix factorization: Complexity, algorithms and applications[J]. Unpublished doctoral dissertation, Université catholique de Louvain. Louvain-La-Neuve: CORE, 2011.
 	\bibitem{mu}Lee D D, Seung H S. Algorithms for non-negative matrix factorization[C]//Advances in neural information processing systems. 2001: 556-562.

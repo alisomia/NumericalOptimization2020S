@@ -35,7 +35,7 @@ for iter=1:maxiter
 	alpha = alpha * beta;
       end
     else
-      if ~suff_decr || Hp == Hn
+      if ~suff_decr || norm(Hp-Hn,'fro')<1e-8
 	H = Hp; break;
       else
 	alpha = alpha/beta; Hp = Hn;

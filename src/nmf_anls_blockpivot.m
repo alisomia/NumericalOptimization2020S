@@ -20,6 +20,11 @@ function [W,H,info] = nmf_anls_blockpivot(V,r, opt)
 %
 % Author: Ting Lin @ PKU
 
+if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
+if ~isfield(opt,'tol'); tol = 1e-5; else; tol = opt.tol; end
+%if ~isfield(opt,'metric');metric = "KL"; else; metric = opt.metric; end
+if ~isfield(opt,'maxiter'); maxiter = 1000; else; maxiter = opt.maxiter; end
+
 [m,n] = size(V);
 if isfield(opt,'init')
     W = opt.init.W;

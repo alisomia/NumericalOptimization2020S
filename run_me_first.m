@@ -3,7 +3,8 @@ clc;
 clear;
 
 % set configuration
-addpath('./database');
+addpath('./');
+addpath(genpath('./database'));
 addpath(genpath('./src'));
 
 % load data

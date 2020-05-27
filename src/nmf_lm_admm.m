@@ -41,7 +41,7 @@ for epoch = 1: maxiter
     %delta_g = delta_g / 2;
     dvec = WH2vec(dW,dH,m,n,r);
     delta_g = dvec'*JtJprho(dvec, W,H, nu, m,n,r) - 2*sum(sum(gradW.*dW)) - 2*sum(sum(gradH.*dH));
-    if delta_g<0 && delta_f <0; nu = nu*4; continue; end
+    if delta_g<0 && delta_f <0; nu = nu*4; loss(epoch) = loss(epoch-1); continue; end
      delta_f = sum(sum(R.^2)) - sum(sum(Rnew.^2));
     gamma = delta_f/delta_g;
 %     gamma = delta_f;

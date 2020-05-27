@@ -1,4 +1,4 @@
-function [init_factors, init_factors_opts] = generate_init_factors(V, rank, options)
+function [V, init_factors, init_factors_opts] = generate_init_factors(V, rank, options)
 
     % V = WH + R
 
