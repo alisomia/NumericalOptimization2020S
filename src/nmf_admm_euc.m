@@ -2,9 +2,29 @@ function [W, H, info] = nmf_admm_euc(V, r, opt)
 % Alternative Direction Multiplier method (ADMM) for NMF with metic
 % euclidean
 % % % %  ref:
-%  DongjinSong?,DavidA.Meyer?,MartinRenqiangMin?,  "FastNonnegativeMatrixFactorizationwith Rank-oneADMM
+%  DongjinSong,DavidA.Meyer,MartinRenqiangMin,  "FastNonnegativeMatrixFactorizationwith Rank-oneADMM
 %
 %
+%   
+%
+% INPUT
+% --------------------------------------------------------
+% V [m*n double]: the original nonnegative matrix, need to factorize
+% r [int]: the rank of NMF
+% opt [struct]: additional options
+%   - admm_iter [int]: admm iteration, default = 10
+%   - rho, mu [double]: admm param, defult = 5,1
+%   - eps [double]: precision, default = 1e-8
+%   - maxiter [int] : max iteration, default = 1000
+% OUTPUT
+% ----------------------------------------------------------
+% W [m*r double], V [r*n double]: the factor
+% info [struct]
+%   - fvalue [double]: fvalue
+%   - epoch [int]: iteration time
+%   - loss [array]: the loss at each epoch
+%
+% Author: Ting Lin @ PKU
 %
 
 [m,n] = size(V);

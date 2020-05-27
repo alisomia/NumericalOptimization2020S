@@ -1,7 +1,27 @@
+function [W,H,info] = nmf_lm_admm(V,r,opt)
 % use LM to solve the least square problem, 
 % the subproblem is solved by (projected) ADMM
-
-function [W,H,info] = nmf_lm_admm(V,r,opt)
+%
+%   
+%
+% INPUT
+% --------------------------------------------------------
+% V [m*n double]: the original nonnegative matrix, need to factorize
+% r [int]: the rank of NMF
+% opt [struct]: additional options
+%   - admm_iter [int]: admm iteration, default = 10
+%   - rho, mu [double]: admm param, defult = 5,1
+%   - eps [double]: precision, default = 1e-8
+%   - maxiter [int] : max iteration, default = 1000
+% OUTPUT
+% ----------------------------------------------------------
+% W [m*r double], V [r*n double]: the factor
+% info [struct]
+%   - fvalue [double]: fvalue
+%   - epoch [int]: iteration time
+%   - loss [array]: the loss at each epoch
+%
+% Author: Ting Lin @ PKU
 
 if ~isfield(opt,'eps'); eps = 1e-6; else; eps = opt.eps; end
 if ~isfield(opt,'tol'); tol = 1e-2; else; tol = opt.tol; end
