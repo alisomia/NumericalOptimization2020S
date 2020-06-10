@@ -1,0 +1,364 @@
+\documentclass{article}
+\usepackage[ruled, linesnumbered]{algorithm2e}
+\def\showtopic{Numerical Optimization}
+\def\showtitle{Lab 2: Gradient Based Methods: \\Nonlinear CG Method and Global BB Method}
+\def\showabs{Lab 2}
+\def\showauthor{Ting Lin, 1700010644}
+\def\showchead{LIN}
+\input{preamble.tex}
+
+\begin{document}
+	\maketitle
+	\thispagestyle{fancy}
+	\tableofcontents
+	
+	\section*{}
+
+In this report we introduce some gradient based methods, including nonlinear CG method and GBB method. The advantage of gradient based method is that they only utilize the information of gradient, which will be free from large computation involving matrix. Suitable algorithm will make the gradient based methods more powerful and effective. After introducing the algorithms, several groups of numerical experiments will be performed, displayed and discussed. 
+
+\section{Nonlinear CG Method}
+\subsection{General Framework}
+	Inspired by Conjugate Gradient (CG) method solving the linear symmetric and positive definite (SPD) system, we propose the following Nonlinear CG method solving general optimization problem. 
+
+\begin{algorithm}[H]
+	\caption{Nonlinear CG}
+	\KwIn{$f$, $x_0$, $\varepsilon > 0$}
+	\KwOut{$x_k$}
+	$k=0, g_k = g(x_k), f_k = f(x_k)$
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}
+	{$\alpha_k$ = LineSearch($f, x_k, d_k$)
+		
+	$x_{k+1} = x_k + \alpha_k d_k$
+	
+	Compute $\beta_k$, $d_{k+1} = -g_{k+1} + \beta_{k}d_k$
+	
+	$k =k+1$
+	
+	$f_k = f(x_k), g_k = g(x_k)$
+	}
+\end{algorithm}
+In practice, we slightly modify the line search step in order to assure the direction is descent. 
+\begin{algorithm}[H]
+	\caption{Nonlinear CG(ii)}
+	\KwIn{$f$, $x_0$, $\varepsilon > 0$}
+	\KwOut{$x_k$}
+	$k=0, g_k = g(x_k), f_k = f(x_k)$
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}
+	{\eIf{$g_k^Td_k>0$}{$\tilde d_k = -d_k/|d_k|$}{$\tilde d_k = d_k/|d_k|$}
+		
+		$\alpha_k$ = LineSearch($f, x_k, \tilde d_k$)
+		
+		$x_{k+1} = x_k + \alpha_k \tilde d_k$
+		
+		Compute $\beta_k$, $d_{k+1} = -g_{k+1} + \beta_{k}d_k$
+		
+		$k =k+1$
+		
+			$f_k = f(x_k), g_k = g(x_k)$
+	}
+\end{algorithm}
+
+In some applications, we can use restart technique to make the convergence faster. 
+\begin{algorithm}[H]
+	\caption{Nonlinear CG(iii)}
+	\KwIn{$f$, $x_0$, $\varepsilon > 0$}
+	\KwOut{$x_k$}
+	$k=0, g_k = g(x_k), f_k = f(x_k)$\\
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}
+	{\eIf{$g_k^Td_k>0$}{$\tilde d_k = -d_k/|d_k|$}{$\tilde d_k = d_k/|d_k|$}
+		
+		$\alpha_k$ = LineSearch($f, x_k, \tilde d_k$)
+		
+		$x_{k+1} = x_k + \alpha_k \tilde d_k$
+		
+		\eIf{$M|k$}{$d_{k+1} = -g_{k+1}$}{Compute $\beta_k$, $d_{k+1} = -g_{k+1} + \beta_{k}d_k$}
+		
+		$k =k+1$
+		
+		$f_k = f(x_k), g_k = g(x_k)$
+	}
+\end{algorithm}
+
+It remains to discuss the choice of linesearch method. Without specifying we will use Stroing wolfe rule, stop when the max iteration reached. But as we will see that in some case the exact line search method is powerful.
+
+\subsection{Choice of Direction Updates}
+We consider the following updating strategies.
+
+\begin{enumerate}
+	\item FR Formula $$\beta = \frac{g_{k+1}^Tg_{k+1}}{g_k^Tg_k}$$
+	\item PRP Formula 
+	$$\beta = \frac{g_{k+1}^Tg_{k+1} - g_{k+1}^Tg_k}{g_k^Tg_k}$$
+	\item PRP+ Formula 
+	$$\beta = \max(\beta^{PRP},0)$$
+	\item FR-PRP Formula
+	$$ \textbf{if~~} |\beta^{PRP}| < \beta^{FR}; \beta = \beta^{PRP}$$
+	$$\textbf{if~~} \beta^{PRP} < - beta^{FR}; beta = - \beta^{FR}$$
+$$	\textbf{otherwise~~} \beta = \beta^{FR}$$
+\end{enumerate}
+
+Also, we consider the Hu-Storey Algorithm, which $\beta$ is computed from the following system.
+
+The update rule is $d^+_k = \alpha g_k + \beta d_{k-1}$, where
+$$\begin{bmatrix}
+\alpha \\ \beta
+\end{bmatrix} = - \begin{bmatrix}
+g_k^THg_k& g_k^THd_{k-1} \\ 
+g_k^THd_{k-1}& d_{k-1}^THd_{k-1}
+\end{bmatrix}^{-1} 
+\begin{bmatrix}
+g_k^Tg_k \\ g_k^Td_{k-1}
+\end{bmatrix}
+$$
+\subsection{The Detailed Algorithm of Hu--Storey's Method}
+We rewrite the Hu--Steorey's algorithm with some techniques. Here some procedure in the original paper is simplified since in higher dimension it will force HS method more likely to the gradient descent.
+
+\begin{algorithm}
+	\KwIn{$f$, $x_0$, $\varepsilon > 0$}
+	\KwOut{$x_k$}
+	$k=0, g_k = g(x_k), f_k = f(x_k)$
+	
+	$Counter = 0$
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}
+	{\eIf{$g_k^Td_k>0$}{$\tilde d_k = -d_k/|d_k|$}{$\tilde d_k = d_k/|d_k|$}
+	
+			$\alpha_k$ = LineSearch($f, x_k, \tilde d_k$)
+			
+				$x_{k+1} = x_k + \alpha_k \tilde d_k$
+				
+	$g_{k+1} = g(x_{k+1})$
+	
+	$A_k = (g(x_k+\varepsilon\cdot d_k) - g(xk -\varepsilon\cdot d_k))/(2\varepsilon)$
+	
+	$B_k = (g(x_k+\varepsilon\cdot g_{k+1}) - g(xk -\varepsilon\cdot g_{k+1}))/(2\varepsilon)$
+	
+	$t_k = d_k^TA_k, v_k = g_{k+1}^TB_k, u_k = g_{k+1}^TA_k$
+	
+	\If{$Counter = M$}{
+		
+		$Counter = 0$
+		
+		$d_k = -g_{k+1}, k = k+1$
+		
+		\Continue}
+	%\If{ANY OF $t_k, v_k, 3/4-u_k^2/(t_kv_k)> 0$ \And $(v_k/g_k^Tg_k)(t_k/d_{k-1}^Td_{k-1}) < 1$ does not satisfied}{	$Counter = 0$
+	%	
+	%	$d_k = -g_{k+1}, k = k+1$
+	%%	\Continue}
+	  $Counter = Counter + 1$
+	  
+	  $w_k = t_kv_k-u_k^2$
+	  
+	$d_k = 1/w_k((u_kg_{k+1}^Td_k - t_kg_{k+1}^Tg_{k+1})*gk + (u_kg_{k+1}^Tg_{k+1} - v_kg_{k+1}^Td_k)*dk)$
+	
+}
+\end{algorithm}
+\section{Global BB Method}
+\subsection{Naive BB Method}
+Naive BB algorithm only utilized the gradient message and solve the stepsize $\alpha$ by 
+$$\alpha_k = \argmin_{\alpha>0} \|\alpha^{-1} s_{k-1} - y_{k-1}\|_2^2$$
+or 
+$$\alpha_k = \argmin_{\alpha>0} \| s_{k-1} - \alpha y_{k-1}\|_2^2$$
+Here $s_{k-1} = x_k - x_{k-1}$ and $y_{k-1} = g_k - g_{k-1}$.
+Solving the two problem yields two choices of stepsize
+$$\alpha_k^{BB1} = \frac{s_{k-1}^Ts_{k-1}}{s_{k-1}^Ty_{k-1}}, \qquad 
+\alpha_k^{BB2} = \frac{s_{k-1}^Ty_{k-1}}{y_{k-1}^Ty_{k-1}}.$$
+
+We write it into the whole algorithm, deriving the naive BB method. 
+\begin{algorithm}
+	\caption{Naive-BB}
+	\KwIn{$f$, $x_0$}
+	\KwOut{$x_k$}
+	
+	$k = 1$
+	
+	Using steepest descent method and line search to obtain $x_1$.
+	
+	Compute $g_0 = g(x_0), g_1 = g(x_1)$
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}{$s_{k-1} = x_k - x_{k-1}$
+	
+$y_{k-1} = g_k - g_{k-1}$
+
+Compute $\alpha_k$ being either $\alpha^{BB1}$ or $\alpha^{BB2}$
+
+$x_{k+1} = x_k - \alpha_kg_k$
+
+$g_{k+1} = g(x_{k+1}), k=k+1$}
+\end{algorithm}
+\subsection{BB Method with non-monotone line search}
+We add a non-monotone line search to make the algorithm more flexible and practical.
+\begin{algorithm}[H]
+	\caption{Global BB}
+	\KwIn{$f$, $x_0$, $\varepsilon$, $\delta$, $\gamma$, $\sigma$, $M$}
+	\KwOut{$x_k$}
+	
+	$k = 1$
+	
+	Using steepest descent method and line search to obtain $x_1$.
+	
+	Compute $g_0 = g(x_0), g_1 = g(x_1)$
+	
+	\While{$\|g_k\|_{\infty}>\varepsilon (1+|f_k|)$}{$s_{k-1} = x_k - x_{k-1}$
+		
+		$y_{k-1} = g_k - g_{k-1}$
+		
+		Compute $\alpha_k$ being either $\alpha^{BB1}$ or $\alpha^{BB2}$
+		
+		\eIf{$\alpha_k < \varepsilon$ or $\alpha_k > 1/\varepsilon$}{$\lambda = \delta$}{$\lambda = 1/\alpha_k$}
+		
+		\While{$f(x_k -\lambda g_k)< \max_{j<\min{k,M}}f(x_{k-j}) - \lambda\gamma g_k^Tg_k$}{$\lambda = \lambda\cdot \sigma$}
+		
+		$g_{k+1} = g(x_{k+1}), k=k+1$}
+\end{algorithm}
+\section{Numerical Experiments}
+We test the assignded problem in MATLAB, the code is attached and the result is tested in my laptop (I7-6700HQ).
+\subsection{Problem Setting}
+In this report we choose the following problem and test the success, calls of $f$ and $g$, CPU time for each method.
+
+\paragraph{TRIGonometric fuction}
+$$F(x) = \sum_{i=1}^n \{n+i-\sum_{j=1}^n[a_{ij}\sin(x_j)+b_{ij}\cos(x_j)]\}^2$$
+where $a_{ij} = \delta_{ij}$, $b_{ij} = i\delta_{ij}+1$, $delta$ is the kronekcer-delta. 
+The initial value is selected as $$x_0 = (1/n, \cdots, 1/n)^T$$
+We choose $n = 100, 1000, 10000$ (denoted as trig2, trig3,trig4)
+\paragraph{Extended Powell function}
+$$F(x) = \sum_{j=1}^{n/4}[(x_{4j-3}+10x_{4j-2})^2  +5(x_{4j-1}-x_{4j})^2 + (x_{4j-2}-2x_{4j-1})^4 + 10(x_{4j-3}-x_{4j})^4]$$
+The initial value is 
+$$x_0 = (3, -1,0,3,\cdots, )^T$$
+We choose $n=100, 1000,10000$.(denoted as ep2, ep3,ep4)
+\paragraph{TRIDiagonal function}
+$$F(x) = \sum_{i=2}^n[i(2x_i-x_i-1)^2]$$
+with initial value $x_0 = ones(n,1)$. 
+We choose $n=100,1000,10000$ (denoted as trid2, trid3,trid4)
+\paragraph{MATtrix square root}
+We want to minimize the following question
+$$\min_{B} \|B^2-A\|_F^2$$
+here $A = \textbf{reshape}(\sin((1:n).^2), [n,n])^2$
+ and the initial point is $0.2*\textbf{reshape}(\sin((1:n).^2), [n,n])$
+ We choose $n=10,32,100$ (denoted as mat2, mat3,mat4)
+\subsection{Numerical Results for trig}
+We first test our methods in the trig problem, here we use the exact line search method and do not restart at all.
+	\begin{table}[H]
+		\caption{Results on trig2, trig3, trig4}
+		\centering
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline
+			&           & FR                              & PRP+                            & FR-PRP                          & HS                              & GBB                             \\ \hline
+			& CPU TIME  & {\color[HTML]{000000} 1.02E+00} & {\color[HTML]{000000} 2.00E-01} & {\color[HTML]{000000} 2.00E-01} & {\color[HTML]{000000} 7.20E-01} & {\color[HTML]{000000} 4.68E-03} \\ \cline{2-7} 
+			& \#f       & {\color[HTML]{000000} 46481}    & {\color[HTML]{000000} 8467}     & {\color[HTML]{000000} 8467}     & {\color[HTML]{000000} 31707}    & {\color[HTML]{000000} 79}       \\ \cline{2-7} 
+			& \#g       & {\color[HTML]{000000} 281}      & {\color[HTML]{000000} 52}       & {\color[HTML]{000000} 52}       & {\color[HTML]{000000} 956}      & {\color[HTML]{000000} 75}       \\ \cline{2-7} 
+			\multirow{-4}{*}{2} & Iteration & {\color[HTML]{000000} 281}      & {\color[HTML]{000000} 52}       & {\color[HTML]{000000} 52}       & {\color[HTML]{000000} 192}      & {\color[HTML]{000000} 75}       \\ \hline
+			& CPU TIME  & {\color[HTML]{000000} 3.57E+00} & {\color[HTML]{000000} 4.90E-01} & {\color[HTML]{000000} 4.80E-01} & {\color[HTML]{000000} 1.16E+00} & {\color[HTML]{000000} 1.01E-02} \\ \cline{2-7} 
+			& \#f       & {\color[HTML]{000000} 64575}    & {\color[HTML]{000000} 9131}     & {\color[HTML]{000000} 8633}     & {\color[HTML]{000000} 20917}    & {\color[HTML]{000000} 78}       \\ \cline{2-7} 
+			& \#g       & {\color[HTML]{000000} 390}      & {\color[HTML]{000000} 56}       & {\color[HTML]{000000} 53}       & {\color[HTML]{000000} 631}      & {\color[HTML]{000000} 70}       \\ \cline{2-7} 
+			\multirow{-4}{*}{3} & Iteration & {\color[HTML]{000000} 390}      & {\color[HTML]{000000} 56}       & {\color[HTML]{000000} 53}       & {\color[HTML]{000000} 127}      & {\color[HTML]{000000} 70}       \\ \hline
+			& CPU TIME  & {\color[HTML]{000000} 7.07E+00} & {\color[HTML]{000000} 2.15E+00} & {\color[HTML]{000000} 2.24E+00} & {\color[HTML]{000000} 2.26E+00} & {\color[HTML]{000000} 6.56E-02} \\ \cline{2-7} 
+			& \#f       & {\color[HTML]{000000} 31707}    & {\color[HTML]{000000} 9629}     & {\color[HTML]{000000} 9629}     & {\color[HTML]{000000} 9795}     & {\color[HTML]{000000} 101}      \\ \cline{2-7} 
+			& \#g       & {\color[HTML]{000000} 192}      & {\color[HTML]{000000} 59}       & {\color[HTML]{000000} 59}       & {\color[HTML]{000000} 296}      & {\color[HTML]{000000} 89}       \\ \cline{2-7} 
+			\multirow{-4}{*}{4} & Iteration & {\color[HTML]{000000} 192}      & {\color[HTML]{000000} 59}       & {\color[HTML]{000000} 59}       & {\color[HTML]{000000} 60}       & {\color[HTML]{000000} 89}       \\ \hline
+		\end{tabular}
+	\end{table}
+\subsection{Numerical Results for ep}
+We test our methods in ep problem, here we use the inexact line search with max search time 5,and do restart after each 20 iterations.
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+\begin{table}[H]
+	\caption{Results for ep2, ep3, ep4}
+			\centering
+	\begin{tabular}{|c|c|l|l|l|l|l|}
+		\hline
+		&           & \multicolumn{1}{c|}{FR}         & \multicolumn{1}{c|}{PRP+}       & \multicolumn{1}{c|}{FR-PRP}     & \multicolumn{1}{c|}{HS}         & \multicolumn{1}{c|}{GBB}        \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 7.99E-01} & {\color[HTML]{000000} 1.02E-01} & {\color[HTML]{000000} 7.21E-01} & {\color[HTML]{000000} 1.72E+01} & {\color[HTML]{000000} 2.17E-02} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 6905}     & {\color[HTML]{000000} 887}      & {\color[HTML]{000000} 5677}     & {\color[HTML]{000000} 120045}   & {\color[HTML]{000000} 339}      \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 4607}     & {\color[HTML]{000000} 585}      & {\color[HTML]{000000} 3793}     & {\color[HTML]{000000} 154669}   & {\color[HTML]{000000} 251}      \\ \cline{2-7} 
+		\multirow{-4}{*}{2} & Iteration & {\color[HTML]{000000} 1150}     & {\color[HTML]{000000} 137}      & {\color[HTML]{000000} 947}      & {\color[HTML]{000000} 20000}    & {\color[HTML]{000000} 251}      \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 6.43E+00} & {\color[HTML]{000000} 1.01E-01} & {\color[HTML]{000000} 6.23E+00} & {\color[HTML]{000000} 8.70E-01} & {\color[HTML]{000000} 7.57E-02} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 19927}    & {\color[HTML]{000000} 317}      & {\color[HTML]{000000} 19359}    & {\color[HTML]{000000} 1985}     & {\color[HTML]{000000} 271}      \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 13293}    & {\color[HTML]{000000} 229}      & {\color[HTML]{000000} 12922}    & {\color[HTML]{000000} 2594}     & {\color[HTML]{000000} 203}      \\ \cline{2-7} 
+		\multirow{-4}{*}{3} & Iteration & {\color[HTML]{000000} 3322}     & {\color[HTML]{000000} 55}       & {\color[HTML]{000000} 3229}     & {\color[HTML]{000000} 335}      & {\color[HTML]{000000} 203}      \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 5.15E+00} & {\color[HTML]{000000} 1.11E+00} & {\color[HTML]{000000} 6.37E+00} & {\color[HTML]{000000} 6.49E+00} & {\color[HTML]{000000} 5.17E-01} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 2325}     & {\color[HTML]{000000} 487}      & {\color[HTML]{000000} 2757}     & {\color[HTML]{000000} 1873}     & {\color[HTML]{000000} 221}      \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 1563}     & {\color[HTML]{000000} 345}      & {\color[HTML]{000000} 1867}     & {\color[HTML]{000000} 2459}     & {\color[HTML]{000000} 170}      \\ \cline{2-7} 
+		\multirow{-4}{*}{4} & Iteration & {\color[HTML]{000000} 389}      & {\color[HTML]{000000} 81}       & {\color[HTML]{000000} 464}      & {\color[HTML]{000000} 316}      & {\color[HTML]{000000} 170}      \\ \hline
+	\end{tabular}
+\end{table}
+
+\subsection{Numerical Results for trid}
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+We test our methods in ep problem, here we use the inexact line search with max search time 5,and do not restart at all.
+\begin{table}[H]
+	\caption{results for trid2,trid3,trid4}
+			\centering
+	\begin{tabular}{|c|c|l|l|l|l|l|}
+		\hline
+		&           & \multicolumn{1}{c|}{FR}         & \multicolumn{1}{c|}{PRP+}       & \multicolumn{1}{c|}{FR-PRP}     & \multicolumn{1}{c|}{HS}         & \multicolumn{1}{c|}{GBB}        \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 9.78E-02} & {\color[HTML]{000000} 8.30E-02} & {\color[HTML]{000000} 7.88E-02} & {\color[HTML]{000000} 2.84E-01} & {\color[HTML]{000000} 1.21E-02} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 855}      & {\color[HTML]{000000} 651}      & {\color[HTML]{000000} 639}      & {\color[HTML]{000000} 2759}     & {\color[HTML]{000000} 267}      \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 578}      & {\color[HTML]{000000} 442}      & {\color[HTML]{000000} 434}      & {\color[HTML]{000000} 2900}     & {\color[HTML]{000000} 216}      \\ \cline{2-7} 
+		\multirow{-4}{*}{2} & Iteration & {\color[HTML]{000000} 145}      & {\color[HTML]{000000} 111}      & {\color[HTML]{000000} 109}      & {\color[HTML]{000000} 375}      & {\color[HTML]{000000} 216}      \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 4.44E-01} & {\color[HTML]{000000} 2.33E-01} & {\color[HTML]{000000} 2.28E-01} & {\color[HTML]{000000} 1.87E+00} & {\color[HTML]{000000} 6.06E-02} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 3749}     & {\color[HTML]{000000} 1963}     & {\color[HTML]{000000} 1963}     & {\color[HTML]{000000} 15013}    & {\color[HTML]{000000} 1122}     \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 2517}     & {\color[HTML]{000000} 1328}     & {\color[HTML]{000000} 1324}     & {\color[HTML]{000000} 15309}    & {\color[HTML]{000000} 806}      \\ \cline{2-7} 
+		\multirow{-4}{*}{3} & Iteration & {\color[HTML]{000000} 629}      & {\color[HTML]{000000} 332}      & {\color[HTML]{000000} 331}      & {\color[HTML]{000000} 1997}     & {\color[HTML]{000000} 806}      \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 3.03E+00} & {\color[HTML]{000000} 2.37E+00} & {\color[HTML]{000000} 2.30E+00} & {\color[HTML]{000000} F}        & {\color[HTML]{000000} 2.21E+00} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 7947}     & {\color[HTML]{000000} 6661}     & {\color[HTML]{000000} 6331}     & {\color[HTML]{000000} }         & {\color[HTML]{000000} 7018}     \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 5332}     & {\color[HTML]{000000} 4468}     & {\color[HTML]{000000} 4248}     & {\color[HTML]{000000} }         & {\color[HTML]{000000} 5039}     \\ \cline{2-7} 
+		\multirow{-4}{*}{4} & Iteration & {\color[HTML]{000000} 1331}     & {\color[HTML]{000000} 1115}     & {\color[HTML]{000000} 1060}     & {\color[HTML]{000000} }         & {\color[HTML]{000000} 5039}     \\ \hline
+	\end{tabular}
+\end{table}
+\subsection{Numerical Result for mat}
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+We test our all methods except HS method (since it are too slow to converge...). We use the inexact line search with max search time 5, and do restart after each 50 iterations.
+\begin{table}[H]
+	\centering
+	\caption{results for mat2, mat3, mat4}
+	\begin{tabular}{|c|c|l|l|l|l|l|}
+		\hline
+		&           & \multicolumn{1}{c|}{FR}         & \multicolumn{1}{c|}{PRP+}       & \multicolumn{1}{c|}{FR-PRP}     & \multicolumn{1}{c|}{HS} & \multicolumn{1}{c|}{GBB}          \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 2.91E+00} & {\color[HTML]{000000} 4.10E+00} & {\color[HTML]{000000} 3.77E+00} & {\color[HTML]{000000} } & {\color[HTML]{000000} 1.76E+00}   \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 29065}    & {\color[HTML]{000000} 37423}    & {\color[HTML]{000000} 35439}    & {\color[HTML]{000000} } & {\color[HTML]{000000} 39519}      \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 19137}    & {\color[HTML]{000000} 24662}    & {\color[HTML]{000000} 23405}    & {\color[HTML]{000000} } & {\color[HTML]{000000} 28456}      \\ \cline{2-7} 
+		\multirow{-4}{*}{2} & Iteration & {\color[HTML]{000000} 4626}     & {\color[HTML]{000000} 6037}     & {\color[HTML]{000000} 5734}     & {\color[HTML]{000000} } & {\color[HTML]{000000} 28456}      \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 2.11E+01} & {\color[HTML]{000000} 2.21E+01} & {\color[HTML]{000000} 2.68E+01} & {\color[HTML]{000000} } & {\color[HTML]{000000} 5.06E+01}   \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 112095}   & {\color[HTML]{000000} 97607}    & {\color[HTML]{000000} 106599}   & {\color[HTML]{000000} } & {\color[HTML]{000000} 388925}     \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 74189}    & {\color[HTML]{000000} 64821}    & {\color[HTML]{000000} 70778}    & {\color[HTML]{000000} } & {\color[HTML]{000000} 283126}     \\ \cline{2-7} 
+		\multirow{-4}{*}{3} & Iteration & {\color[HTML]{000000} 18254}    & {\color[HTML]{000000} 16054}    & {\color[HTML]{000000} 17533}    & {\color[HTML]{000000} } & {\color[HTML]{000000} 283126}     \\ \hline
+		& CPU TIME  & {\color[HTML]{000000} 2.38E+01} & {\color[HTML]{000000} 1.14E+02} & {\color[HTML]{000000} 9.19E+01} & {\color[HTML]{000000} } & {\color[HTML]{000000} $\sim$2400} \\ \cline{2-7} 
+		& \#f       & {\color[HTML]{000000} 40209}    & {\color[HTML]{000000} 175331}   & {\color[HTML]{000000} 142455}   & {\color[HTML]{000000} } & {\color[HTML]{000000} $\sim$4M}   \\ \cline{2-7} 
+		& \#g       & {\color[HTML]{000000} 26763}    & {\color[HTML]{000000} 116877}   & {\color[HTML]{000000} 94956}    & {\color[HTML]{000000} } & {\color[HTML]{000000} $\sim$3M}   \\ \cline{2-7} 
+		\multirow{-4}{*}{4} & Iteration & {\color[HTML]{000000} 6670}     & {\color[HTML]{000000} 29208}    & {\color[HTML]{000000} 23729}    & {\color[HTML]{000000} } & {\color[HTML]{000000} $\sim$4M}   \\ \hline
+	\end{tabular}
+\end{table}
+\subsection{Discussion}
+We found that BB and CG have different behaviors in different problem, and the restart is a powerful tool in CG method. However, both CG and BB methods are possible to reduce into gradient descent and hence less attractive. Moreover, the HS method sometimes failed in practice, this means we might choose more effective algorithm.
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+Escape special TeX symbols (%, &, _, #, $)

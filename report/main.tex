@@ -238,8 +238,6 @@ The whole algorithm uses PBBNLS to update each steps.
 \end{algorithm}
 \subsection{Projected Gradient Descent based ALS}
 \cite{alspgd} proposed a projected gradient descent method to solve the subproblem. 
-%todo write the ALSPGD part.
-小鲤子:
 
 \begin{algorithm}[htp]
 	\caption{Projected Gradient Method}%算法标题
@@ -353,7 +351,7 @@ $$L(W,H,S,T,\Lambda, \Pi) = \frac{1}{2} \|X - WH\|_F^2 +  (\Lambda, W-S) + (\Pi,
 
 \subsection{Alternating Optimizing ADMM}
 AO-ADMM is use ADMM to solve the subproblem in ALS, introduced in \cite{aoadmm}. We only introduce how to solve the subproblem by ADMM, in the following algorithm.
-%todo explain the ADMM of subproblem
+
 \begin{algorithm}[H]
 	\caption{ADMM-LS-UPDATE}
 	\begin{algorithmic}[1]
@@ -795,6 +793,30 @@ We next the result also on the normalized matrices.
 	\end{tabular}
 \end{table}
 
+Net we show the performance on TR11. We first normalize the data.
+\begin{table}[H]
+	\caption{Result for TR11, $r = 10$}
+	\centering
+	
+	\begin{tabular}{|l|r|r|r|r|r|}
+		\hline
+		& \multicolumn{1}{l|}{10} & \multicolumn{1}{l|}{50} & \multicolumn{1}{l|}{100} & \multicolumn{1}{l|}{300} & \multicolumn{1}{l|}{CPUTIME} \\ \hline
+		MU       & 0.55                    & 0.42                    & 0.41                     & 0.40                     & 43.06                        \\ \hline
+		MUmod    & 0.50                    & 0.40                    & 0.40                     & 0.40                     & 42.42                        \\ \hline
+		MUacc    & 0.40                    & 0.37                    & 0.36                     & 0.36                     & 75.27                        \\ \hline
+		ALS      & 0.37                    & 0.36                    & 0.36                     & 0.36                     & 41.00                        \\ \hline
+		HALS     & 0.40                    & 0.37                    & 0.37                     & 0.36                     & 42.83                        \\ \hline
+		HALSacc  & 0.39                    & 0.37                    & 0.36                     & 0.36                     & 51.14                        \\ \hline
+		APBB     & 1.84                    & 1.84                    & 1.84                     & 1.84                     & 1.33                         \\ \hline
+		ALSPGD   & 1.81                    & 1.81                    & 1.81                     & 1.81                     & 0.84                         \\ \hline
+		ANLSas   & 0.38                    & 0.38                    & 0.36                     & 0.36                     & 68.22                        \\ \hline
+		ANLSgp   & 0.37                    & 0.36                    & 0.36                     & 0.36                     & 393.92                       \\ \hline
+		ANLSbpp  & 0.37                    & 0.36                    & 0.36                     & 0.36                     & 65.41                        \\ \hline
+		ADMM     & 1.81                    & 1.76                    & 1.27                     & 1.00                     & 49.47                        \\ \hline
+		AO-ADMM  & 1.81                    & 0.45                    & 0.37                     & 0.36                     & 89.28                        \\ \hline
+		LMF-ADMM & 16.52                   & 1.82                    & 1.82                     & 1.82                     & 564.94                       \\ \hline
+	\end{tabular}
+\end{table}
 \section{Discussion and Improvement}
 \subsection{Discussion}
 	From the experiment we can find that if the rank is small or the residual is small, then LMF-ADMM method behaves well, since in the small residual case, the LMF is a good choice of  NLS. However, if the rank is too large, the LMF behaves very poor. As the experiment indicates, in 100*100 case our proposed method is powerful, but things changed in 1000*1000 case and real datebase.

@@ -20,4 +20,4 @@
 \contentsline {section}{\numberline {7}Numerical Experiment (II): ORL and YALE data}{16}
 \contentsline {section}{\numberline {8}Discussion and Improvement}{19}
 \contentsline {subsection}{\numberline {8.1}Discussion}{19}
-\contentsline {subsection}{\numberline {8.2}Possible Improvement of LMF-ADMM}{19}
+\contentsline {subsection}{\numberline {8.2}Possible Improvement of LMF-ADMM}{20}

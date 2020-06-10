@@ -1,5 +1,5 @@
 function [W,H,info] = nmf_anls_activeset(V,r, opt)
-% Alternative Projected Barzilai Borwein method (APBB) for non-negative matrix factorization (NMF).
+% ANLS by active set for non-negative matrix factorization (NMF).
 %   
 %
 % INPUT

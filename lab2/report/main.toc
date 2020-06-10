@@ -1,0 +1,18 @@
+\contentsline {section}{\numberline {1}Nonlinear CG Method}{1}
+\contentsline {subsection}{\numberline {1.1}General Framework}{1}
+\contentsline {subsection}{\numberline {1.2}Choice of Direction Updates}{3}
+\contentsline {subsection}{\numberline {1.3}The Detailed Algorithm of Hu--Storey's Method}{3}
+\contentsline {section}{\numberline {2}Global BB Method}{3}
+\contentsline {subsection}{\numberline {2.1}Naive BB Method}{3}
+\contentsline {subsection}{\numberline {2.2}BB Method with non-monotone line search}{5}
+\contentsline {section}{\numberline {3}Numerical Experiments}{5}
+\contentsline {subsection}{\numberline {3.1}Problem Setting}{5}
+\contentsline {paragraph}{TRIGonometric fuction}{5}
+\contentsline {paragraph}{Extended Powell function}{6}
+\contentsline {paragraph}{TRIDiagonal function}{6}
+\contentsline {paragraph}{MATtrix square root}{6}
+\contentsline {subsection}{\numberline {3.2}Numerical Results for trig}{6}
+\contentsline {subsection}{\numberline {3.3}Numerical Results for ep}{7}
+\contentsline {subsection}{\numberline {3.4}Numerical Results for trid}{7}
+\contentsline {subsection}{\numberline {3.5}Numerical Result for mat}{7}
+\contentsline {subsection}{\numberline {3.6}Discussion}{8}

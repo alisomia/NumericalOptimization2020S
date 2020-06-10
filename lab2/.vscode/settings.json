@@ -1,0 +1,21 @@
+{
+    "latex-workshop.view.pdf.viewer": "tab",
+    //"latex-workshop.latex.external.build.command": "pdflatex.exe -synctex=1 -interaction=nonstopmode %DOC%"
+    "latex-workshop.latex.recipes":[
+        {
+            "name": "pdflatex ➞ bibtex ➞ pdflatex × 2",
+            "tools": [
+                "pdflatex",
+                "bibtex",
+                "pdflatex",
+                "pdflatex"
+            ]
+        },
+        {
+            "name": "Compile Rnw files",
+            "tools": [
+                "rnw2pdf"
+            ]
+        }
+    ]
+}
